@@ -77,4 +77,13 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             }
         }
     }
+
+    pub fn dma_tick(&mut self) {
+        if !self.ppu.is_dma_active() {
+            return;
+        }
+        // The bus can read addresses from 0x0000 to 0xDF9F
+        let byte = self.read(self.ppu.dma_source());
+        self.ppu.dma_write(byte);
+    }
 }
