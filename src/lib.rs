@@ -7,5 +7,5 @@ mod error;
 mod region;
 mod rom;
 
-use error::Error;
-use rom::Rom;
+pub use error::Error;
+pub use rom::{CartridgeType, CgbMode, Licensee, Rom};
