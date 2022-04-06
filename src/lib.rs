@@ -11,6 +11,7 @@ mod ram;
 mod region;
 mod rom;
 mod serial;
+mod timer;
 
 // Public exports
 pub use error::Error;
