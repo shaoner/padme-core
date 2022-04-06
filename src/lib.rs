@@ -3,6 +3,7 @@
 // Private mods
 #[macro_use]
 mod bitops;
+mod bus;
 mod error;
 mod interrupt;
 mod region;
