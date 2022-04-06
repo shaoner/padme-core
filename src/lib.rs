@@ -7,7 +7,9 @@ mod error;
 mod interrupt;
 mod region;
 mod rom;
+mod serial;
 
 // Public exports
 pub use error::Error;
 pub use rom::{CartridgeType, CgbMode, Licensee, Rom};
+pub use serial::SerialOutput;
