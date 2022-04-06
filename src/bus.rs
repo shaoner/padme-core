@@ -44,6 +44,9 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             VRAM_REGION_START..=VRAM_REGION_END => self.ppu.read(address),
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.read(address),
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.read(address),
+            ECHORAM_REGION_START..=ECHORAM_REGION_END => {
+                self.wram.read(address - ECHORAM_REGION_START + WRAM_REGION_START)
+            },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.read(address),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.read(address),
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.read(address),
@@ -65,6 +68,9 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             VRAM_REGION_START..=VRAM_REGION_END => self.ppu.write(address, value),
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.write(address, value),
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.write(address, value),
+            ECHORAM_REGION_START..=ECHORAM_REGION_END => {
+                self.wram.write(address - ECHORAM_REGION_START + WRAM_REGION_START, value)
+            },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.write(address, value),
             // IO registers
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.write(address, value),
