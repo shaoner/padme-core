@@ -35,6 +35,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
     pub fn read(&self, address: u16) -> u8 {
         let value = match address {
             ROM_REGION_START..=ROM_REGION_END => self.rom.read(address),
+            ERAM_REGION_START..=ERAM_REGION_END => self.rom.read(address),
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.read(address),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.read(address),
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address),
@@ -51,6 +52,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
     pub fn write(&mut self, address: u16, value: u8) {
         match address {
             ROM_REGION_START..=ROM_REGION_END => self.rom.write(address, value),
+            ERAM_REGION_START..=ERAM_REGION_END => self.rom.write(address, value),
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.write(address, value),
             // IO registers
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.write(address, value),
