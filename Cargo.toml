@@ -2,3 +2,6 @@
 name = "padme-core"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
