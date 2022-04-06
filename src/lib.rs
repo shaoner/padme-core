@@ -4,6 +4,7 @@
 #[macro_use]
 mod bitops;
 mod bus;
+mod collections;
 mod cpu;
 mod error;
 mod interrupt;
