@@ -2,15 +2,17 @@ use core::ops::Deref;
 
 use log::error;
 
+use crate::interrupt::InterruptHandler;
 use crate::ram::{HighRam, WorkRam};
 use crate::region::*;
 use crate::rom::Rom;
 use crate::serial::Serial;
-use crate::interrupt::InterruptHandler;
+use crate::timer::Timer;
 
 pub struct Bus<T: Deref<Target=[u8]>> {
     pub serial: Serial,
     pub it: InterruptHandler,
+    pub timer: Timer,
 
     rom: Rom<T>,
     wram: WorkRam,
@@ -21,6 +23,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
     pub fn new(rom: Rom<T>) -> Self {
         Self {
             serial: Serial::new(),
+            timer: Timer::new(),
             rom,
             hram: HighRam::new(),
             wram: WorkRam::new(),
@@ -38,6 +41,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.read(address),
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.read(address),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.read(address),
+            IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.read(address),
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address),
             REG_IF_ADDR | REG_IE_ADDR => self.it.read(address),
             _ => {
@@ -56,6 +60,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             WRAM_REGION_START..=WRAM_REGION_END => self.wram.write(address, value),
             // IO registers
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.write(address, value),
+            IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.write(address, value),
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.write(address, value),
             REG_IF_ADDR | REG_IE_ADDR => self.it.write(address, value),
             _ => {
