@@ -1,6 +1,6 @@
 use core::ops::Deref;
 
-use crate::{Error, Rom, Screen, SerialOutput};
+use crate::{Button, Error, Rom, Screen, SerialOutput};
 use crate::bus::Bus;
 use crate::cpu::Cpu;
 
@@ -55,5 +55,9 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
 
     pub fn serial(&mut self) -> &mut SO {
         &mut self.serial_output
+    }
+
+    pub fn set_button(&mut self, button: Button, is_pressed: bool) {
+        self.bus.joypad.set_button(button, is_pressed);
     }
 }
