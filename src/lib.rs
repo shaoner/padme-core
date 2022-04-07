@@ -18,6 +18,7 @@ mod system;
 mod timer;
 
 // Public exports
+pub use cpu::CLOCK_SPEED;
 pub use error::Error;
 pub use joypad::Button;
 pub use ppu::{FRAME_HEIGHT, FRAME_WIDTH, Pixel, Screen};
