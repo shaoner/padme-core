@@ -10,7 +10,6 @@ use super::{FetchState, Pipeline, Pixel, Sprite};
 //
 pub const FRAME_WIDTH: usize            = 160;
 pub const FRAME_HEIGHT: usize           = 144;
-pub const FRAME_SIZE: usize             = FRAME_WIDTH * FRAME_HEIGHT;
 
 //
 // Default register values
@@ -88,10 +87,10 @@ const PIXEL_COLOR_BLACK: Pixel          = Pixel { r: 0x00, g: 0x00, b: 0x00, a: 
 /// # Example
 ///
 /// ```
-/// use padme_core::{FRAME_SIZE, FRAME_WIDTH, Pixel, Screen};
+/// use padme_core::{FRAME_HEIGHT, FRAME_WIDTH, Pixel, Screen};
 ///
 /// struct Canvas {
-///     pixels: [u32; FRAME_SIZE],
+///     pixels: [u32; FRAME_HEIGHT * FRAME_WIDTH],
 /// }
 ///
 /// impl Screen for Canvas {
@@ -99,8 +98,7 @@ const PIXEL_COLOR_BLACK: Pixel          = Pixel { r: 0x00, g: 0x00, b: 0x00, a: 
 ///         self.pixels[x as usize * FRAME_WIDTH + y as usize] = px.argb();
 ///     }
 ///
-///     fn should_refresh(&mut self) -> bool {
-///         true
+///     fn update(&mut self) {
 ///     }
 /// }
 /// ```
@@ -109,9 +107,9 @@ pub trait Screen {
     /// This could be used to either store the pixel in a buffer
     /// or draw directly (in this case, the draw method can be empty)
     fn set_pixel(&mut self, px: &Pixel, x: u8, y: u8);
-    /// Whether or not a screen refresh should be called
-    /// This is dependent on the FPS implementation
-    fn should_refresh(&mut self) -> bool;
+    /// Notify the screen of a new frame
+    /// This is dependent on the FPS
+    fn update(&mut self);
 }
 
 pub struct Ppu {
@@ -339,7 +337,6 @@ impl Ppu {
                 if is_set!(self.reg_stat, FLAG_STAT_IT_VBLANK) {
                     it.request(InterruptFlag::Lcdc);
                 }
-                screen.should_refresh();
             } else {
                 self.set_mode(LCD_STATUS_MODE_OAM);
                 if is_set!(self.reg_stat, FLAG_STAT_IT_OAM) {

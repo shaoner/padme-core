@@ -2,13 +2,16 @@ use core::ops::Deref;
 
 use crate::{Button, Error, Rom, Screen, SerialOutput};
 use crate::bus::Bus;
-use crate::cpu::Cpu;
+use crate::cpu::{Cpu, CLOCK_SPEED};
+
+pub const DEFAULT_FRAME_RATE: u32 = 60;
 
 pub struct System<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> {
     bus: Bus<T>,
     cpu: Cpu,
     screen: S,
     serial_output: SO,
+    cycles_per_frame: u32,
 }
 
 impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
@@ -21,6 +24,7 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
             cpu,
             screen,
             serial_output,
+            cycles_per_frame: CLOCK_SPEED / DEFAULT_FRAME_RATE,
         }
     }
 
@@ -35,9 +39,9 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
     }
 
     pub fn step(&mut self) -> u8 {
-        let cycles = self.cpu.step(&mut self.bus);
+        let ticks = self.cpu.step(&mut self.bus);
 
-        for _ in 0..cycles {
+        for _ in 0..ticks {
             self.bus.ppu.step(&mut self.screen, &mut self.bus.it);
             self.bus.timer.step(&mut self.bus.it);
         }
@@ -46,7 +50,7 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
 
         self.bus.dma_tick();
 
-        cycles
+        ticks
     }
 
     pub fn screen(&mut self) -> &mut S {
@@ -59,5 +63,20 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
 
     pub fn set_button(&mut self, button: Button, is_pressed: bool) {
         self.bus.joypad.set_button(button, is_pressed);
+    }
+
+    pub fn set_frame_rate(&mut self, fps: u32) {
+        if fps > 0 && fps < CLOCK_SPEED {
+            self.cycles_per_frame = CLOCK_SPEED / fps;
+        }
+    }
+
+    pub fn update_frame(&mut self) -> u32 {
+        let mut cycles = 0u32;
+        while cycles < self.cycles_per_frame {
+            cycles += self.step() as u32;
+        }
+        self.screen.update();
+        cycles
     }
 }
