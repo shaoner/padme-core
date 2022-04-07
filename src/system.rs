@@ -1,4 +1,5 @@
 use core::ops::Deref;
+use core::time::Duration;
 
 use crate::{Button, Error, Rom, Screen, SerialOutput};
 use crate::bus::Bus;
@@ -78,5 +79,9 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
         }
         self.screen.update();
         cycles
+    }
+
+    pub fn min_frame_time(&self) -> Duration {
+        Duration::from_millis(1000 / (CLOCK_SPEED / self.cycles_per_frame) as u64)
     }
 }
