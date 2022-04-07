@@ -8,6 +8,7 @@ mod collections;
 mod cpu;
 mod error;
 mod interrupt;
+mod joypad;
 mod ppu;
 mod ram;
 mod region;
@@ -18,6 +19,7 @@ mod timer;
 
 // Public exports
 pub use error::Error;
+pub use joypad::Button;
 pub use ppu::{FRAME_HEIGHT, FRAME_WIDTH, Pixel, Screen};
 pub use rom::{CartridgeType, CgbMode, Licensee, Rom};
 pub use serial::SerialOutput;

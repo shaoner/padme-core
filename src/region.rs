@@ -85,6 +85,7 @@ pub const OAM_REGION_SIZE: usize        = (OAM_REGION_END - OAM_REGION_START + 1
 // 0xFEFF ---
 // 0xFF00 - Hardware I/O ports: 128B
 pub const IO_REGION_START: u16          = 0xFF00;
+pub const IO_JOYPAD_REGION: u16         = 0xFF00;
 pub const IO_SERIAL_REGION_START: u16   = 0xFF01;
 pub const IO_SERIAL_REGION_END: u16     = 0xFF02;
 pub const IO_TIMER_REGION_START: u16    = 0xFF04;
