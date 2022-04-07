@@ -92,7 +92,6 @@ pub const IO_TIMER_REGION_START: u16    = 0xFF04;
 pub const IO_TIMER_REGION_END: u16      = 0xFF07;
 pub const IO_PPU_REGION_START: u16      = 0xFF40;
 pub const IO_PPU_REGION_END: u16        = 0xFF49;
-pub const IO_END_REGION_END: u16        = 0xFF7F;
 // 0xFF7F ---
 // 0xFF80 - High ram: 127B
 pub const HRAM_REGION_START: u16        = 0xFF80;
