@@ -35,14 +35,14 @@ pub const REG_LYC_ADDR: u16             = 0xFF45;
 pub const REG_DMA_ADDR: u16             = 0xFF46;
 // BG Palette - Non CGB Mode Only
 pub const REG_BGP_ADDR: u16             = 0xFF47;
-// Window Y
-pub const REG_WY_ADDR: u16              = 0xFF4A;
-// Window X + 7
-pub const REG_WX_ADDR: u16              = 0xFF4B;
 // Obj Palette 0 - Non CGB Mode Only
 pub const REG_OBP0_ADDR: u16            = 0xFF48;
 // Obj Palette 1 - Non CGB Mode Only
 pub const REG_OBP1_ADDR: u16            = 0xFF49;
+// Window Y
+pub const REG_WY_ADDR: u16              = 0xFF4A;
+// Window X + 7
+pub const REG_WX_ADDR: u16              = 0xFF4B;
 // Interrupts flags
 pub const REG_IF_ADDR: u16              = 0xFF0F;
 // Interrupts enable
@@ -91,7 +91,7 @@ pub const IO_SERIAL_REGION_END: u16     = 0xFF02;
 pub const IO_TIMER_REGION_START: u16    = 0xFF04;
 pub const IO_TIMER_REGION_END: u16      = 0xFF07;
 pub const IO_PPU_REGION_START: u16      = 0xFF40;
-pub const IO_PPU_REGION_END: u16        = 0xFF49;
+pub const IO_PPU_REGION_END: u16        = 0xFF4B;
 // 0xFF7F ---
 // 0xFF80 - High ram: 127B
 pub const HRAM_REGION_START: u16        = 0xFF80;
