@@ -33,6 +33,10 @@ pub struct Pipeline {
     pub obj_data: [u8; 6],
     /// State of the processing
     pub state: FetchState,
+    /// At some point in this frame the value of WY was equal to LY
+    pub win_y_triggered: bool,
+    /// Save the window line y coords
+    pub win_ly: u8,
 }
 
 impl Pipeline {
@@ -51,6 +55,8 @@ impl Pipeline {
             obj_data: [0u8; 6],
             state: FetchState::Tile,
             render_x: 0,
+            win_y_triggered: false,
+            win_ly: 0,
         }
     }
 

@@ -301,6 +301,18 @@ impl Ppu {
         trace!("pixel mode: oam");
         if self.hdots == 1 {
             self.scan_sprites();
+            if self.is_win_enabled() &&
+                self.reg_wx < (FRAME_WIDTH as u8) &&
+                self.reg_wy < (FRAME_HEIGHT as u8) &&
+                self.reg_ly >= self.reg_wy &&
+                self.reg_ly < self.reg_wy.wrapping_add(FRAME_HEIGHT as u8)
+            {
+                if !self.pipeline.win_y_triggered {
+                    self.pipeline.win_y_triggered = true;
+                } else {
+                    self.pipeline.win_ly += 1;
+                }
+            }
         } else if self.hdots >= OAM_LIMIT_PERIOD {
             self.set_mode(LCD_STATUS_MODE_XFER);
 
@@ -352,7 +364,11 @@ impl Ppu {
         if self.hdots >= HBLANK_LIMIT_PERIOD {
             self.inc_ly(it);
             if (self.reg_ly as u32 * HBLANK_LIMIT_PERIOD) >= VBLANK_LIMIT_PERIOD {
+                // reset ly
                 self.set_ly(0, it);
+                // reset window conditions
+                self.pipeline.win_ly = 0;
+                self.pipeline.win_y_triggered = false;
                 self.set_mode(LCD_STATUS_MODE_OAM);
                 if is_set!(self.reg_stat, FLAG_STAT_IT_OAM) {
                     it.request(InterruptFlag::Lcdc);
@@ -360,6 +376,39 @@ impl Ppu {
             }
             self.hdots = 0;
         }
+    }
+
+    fn select_bg_tiles(&mut self) {
+        let x = self.pipeline.fetch_x.wrapping_add(self.reg_scx) as u16 / 8;
+        let tile_index = self.read(self.bg_map_area() + self.pipeline.map_addr + x);
+        let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
+            128u8
+        } else {
+            0u8
+        };
+        self.pipeline.data[0] = tile_index.wrapping_add(offset);
+    }
+
+    fn select_win_tiles(&mut self) {
+        if self.reg_wx < (FRAME_WIDTH as u8 + 7) && self.reg_wy < (FRAME_HEIGHT as u8) {
+            if self.pipeline.win_y_triggered && (self.pipeline.fetch_x + 7) >= self.reg_wx {
+                let tile_y = self.pipeline.win_ly as u16 / 8;
+                let addr = (self.pipeline.fetch_x as u16 + 7 - self.reg_wx as u16) / 8 + tile_y * 32;
+                let tile_index = self.read(self.win_map_area() + addr);
+                let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
+                    128u8
+                } else {
+                    0u8
+                };
+                self.pipeline.data[0] = tile_index.wrapping_add(offset);
+            }
+        }
+    }
+
+    fn load_bgwin_data(&mut self, offset: u16) {
+        let tile_index = self.pipeline.data[0];
+        let addr = self.bgwin_data_area() + tile_index as u16 * 16 + self.pipeline.tile_y as u16 * 2 + offset;
+        self.pipeline.data[1 + offset as usize] = self.read(addr);
     }
 
     fn scan_sprites(&mut self) {
@@ -497,18 +546,16 @@ impl Ppu {
             return;
         }
 
+        // Pixel fetcher state machine
         match self.pipeline.state {
             FetchState::Tile => {
                 // Retrieve tile index
                 if self.is_bgwin_enabled() {
-                    let x = self.pipeline.fetch_x.wrapping_add(self.reg_scx) as u16 / 8;
-                    let tile_index = self.read(self.bg_map_area() + self.pipeline.map_addr + x);
-                    let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
-                        128u8
-                    } else {
-                        0u8
-                    };
-                    self.pipeline.data[0] = tile_index.wrapping_add(offset);
+                    self.select_bg_tiles();
+
+                    if self.is_win_enabled() {
+                        self.select_win_tiles();
+                    }
                 }
                 if self.is_obj_enabled() {
                     self.select_sprites();
@@ -516,16 +563,12 @@ impl Ppu {
                 self.pipeline.state = FetchState::TileDataLow;
             },
             FetchState::TileDataLow => {
-                let tile_index = self.pipeline.data[0];
-                let addr = self.bgwin_data_area() + tile_index as u16 * 16 + self.pipeline.tile_y as u16 * 2;
-                self.pipeline.data[1] = self.read(addr);
+                self.load_bgwin_data(0);
                 self.load_sprite_data(0);
                 self.pipeline.state = FetchState::TileDataHigh;
             },
             FetchState::TileDataHigh => {
-                let tile_index = self.pipeline.data[0];
-                let addr = self.bgwin_data_area() + tile_index as u16 * 16 + self.pipeline.tile_y as u16 * 2 + 1;
-                self.pipeline.data[2] = self.read(addr);
+                self.load_bgwin_data(1);
                 self.load_sprite_data(1);
                 self.pipeline.state = FetchState::Sleep;
             },
