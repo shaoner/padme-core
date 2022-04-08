@@ -7,9 +7,13 @@ const FLAG_PALETTE_NUMBER: u8           = 0b00010000;
 
 #[derive(Clone, Copy, Eq)]
 pub struct Sprite {
+    /// X coord
     pub x: u8,
+    /// Y coord
     pub y: u8,
+    /// Tile index in the data
     pub tile_index: u8,
+    /// Tile attributes
     attrs: u8,
 }
 

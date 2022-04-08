@@ -173,6 +173,7 @@ impl Ppu {
         }
     }
 
+    /// Starts a DMA transfer
     pub fn dma_start(&mut self, source: u8) {
         self.reg_dma = source;
         self.dma_active = true;
@@ -181,16 +182,19 @@ impl Ppu {
                self.dma_source(), OAM_REGION_START);
     }
 
+    /// Checks whether DMA transfer is still pending
     #[inline]
     pub fn is_dma_active(&self) -> bool {
         self.dma_active
     }
 
+    /// Retrieve current DMA source address
     #[inline]
     pub fn dma_source(&self) -> u16 {
         self.reg_dma as u16 * 0x100 + self.dma_idx as u16
     }
 
+    /// Write a byte retrieved from source directly to oam memory
     #[inline]
     pub fn dma_write(&mut self, byte: u8) {
         self.oam[self.dma_idx as usize] = byte;
@@ -200,6 +204,7 @@ impl Ppu {
         }
     }
 
+    /// Sets the new line y coordinate which eventually triggers some exceptions
     fn set_ly(&mut self, value: u8, it: &mut InterruptHandler) {
         self.reg_ly = value;
         if self.reg_ly == self.reg_lyc {
@@ -217,6 +222,7 @@ impl Ppu {
         self.set_ly(self.reg_ly + 1, it);
     }
 
+    /// Retrieve pixel color from color id
     fn pixel_from_id(pal: u8, color_id: u8) -> Pixel {
         match (pal >> (color_id * 2)) & 0x3 {
             0 => PIXEL_COLOR_WHITE,
@@ -227,26 +233,31 @@ impl Ppu {
         }
     }
 
+    /// Sets pixel mode
     #[inline]
     fn set_mode(&mut self, mode: u8) {
         self.reg_stat = reset!(self.reg_stat, FLAG_STAT_MODE) | mode;
     }
 
+    /// Retrieve whether background/window is enabled
     #[inline]
     fn is_bgwin_enabled(&self) -> bool {
         is_set!(self.reg_lcdc, FLAG_LCDC_BG_WIN_ENABLE)
     }
 
+    /// Retrieve whether sprites are enabled
     #[inline]
     fn is_obj_enabled(&self) -> bool {
         is_set!(self.reg_lcdc, FLAG_LCDC_OBJ_ENABLE)
     }
 
+    /// Retrieve sprite size for the current row
     #[inline]
     fn obj_size(&self) -> u8 {
         if is_set!(self.reg_lcdc, FLAG_LCDC_OBJ_SIZE) { 16 } else { 8 }
     }
 
+    /// Retrieve background tile map
     #[inline]
     fn bg_map_area(&self) -> u16 {
         if is_set!(self.reg_lcdc, FLAG_LCDC_BG_TMAP_AREA) {
@@ -256,6 +267,7 @@ impl Ppu {
         }
     }
 
+    /// Retrieve background/windows tile data
     #[inline]
     fn bgwin_data_area(&self) -> u16 {
         if is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
@@ -265,11 +277,13 @@ impl Ppu {
         }
     }
 
+    /// Retrieve whether window is enabled
     #[inline]
     fn is_win_enabled(&self) -> bool {
         is_set!(self.reg_lcdc, FLAG_LCDC_WIN_ENABLE)
     }
 
+    /// Retrieve window tile map area
     #[inline]
     fn win_map_area(&self) -> u16 {
         if is_set!(self.reg_lcdc, FLAG_LCDC_WIN_TMAP_AREA) {
@@ -279,11 +293,13 @@ impl Ppu {
         }
     }
 
+    /// Retrieve whether lcd is enabled at all
     #[inline]
     fn is_lcd_enabled(&self) -> bool {
         is_set!(self.reg_lcdc, FLAG_LCDC_LCD_ENABLE)
     }
 
+    /// Used to advance the PPU mode after some CPU cycles
     pub fn step<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
         // Dots counter is reset during hblank
         self.hdots += 1;
@@ -291,12 +307,13 @@ impl Ppu {
         match self.reg_stat & FLAG_STAT_MODE {
             LCD_STATUS_MODE_OAM => self.handle_mode_oam(),
             LCD_STATUS_MODE_XFER => self.handle_mode_xfer(screen, it),
-            LCD_STATUS_MODE_HBLANK => self.handle_mode_hblank(screen, it),
+            LCD_STATUS_MODE_HBLANK => self.handle_mode_hblank(it),
             LCD_STATUS_MODE_VBLANK => self.handle_mode_vblank(it),
             _ => unreachable!(),
         }
     }
 
+    /// Mode 2: OAM scanning
     fn handle_mode_oam(&mut self) {
         trace!("pixel mode: oam");
         if self.hdots == 1 {
@@ -324,6 +341,7 @@ impl Ppu {
         }
     }
 
+    /// Mode 3: Drawing pixels
     fn handle_mode_xfer<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
         trace!("pixel mode: xfer");
         if self.pipeline.render_x < FRAME_WIDTH as u8 {
@@ -339,10 +357,12 @@ impl Ppu {
         }
     }
 
-    fn handle_mode_hblank<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
+    /// Mode 0: Handle HBlank
+    fn handle_mode_hblank(&mut self, it: &mut InterruptHandler) {
         trace!("pixel mode: hblank");
         if self.hdots >= HBLANK_LIMIT_PERIOD {
             self.inc_ly(it);
+            // When the frame height is reached, switch to vblank mode
             if self.reg_ly >= FRAME_HEIGHT as u8 {
                 self.set_mode(LCD_STATUS_MODE_VBLANK);
                 it.request(InterruptFlag::Vblank);
@@ -355,13 +375,16 @@ impl Ppu {
                     it.request(InterruptFlag::Lcdc);
                 }
             }
+            // Reset horizontal dots
             self.hdots = 0;
         }
     }
 
+    /// Mode 1: Handle VBlank
     fn handle_mode_vblank(&mut self, it: &mut InterruptHandler) {
         trace!("pixel mode: vblank");
         if self.hdots >= HBLANK_LIMIT_PERIOD {
+            // End of line is reached
             self.inc_ly(it);
             if (self.reg_ly as u32 * HBLANK_LIMIT_PERIOD) >= VBLANK_LIMIT_PERIOD {
                 // reset ly
@@ -378,6 +401,7 @@ impl Ppu {
         }
     }
 
+    /// Retrieve background tile index for the current X
     fn select_bg_tiles(&mut self) {
         let x = self.pipeline.fetch_x.wrapping_add(self.reg_scx) as u16 / 8;
         let tile_index = self.read(self.bg_map_area() + self.pipeline.addr_y_offset + x);
@@ -389,6 +413,7 @@ impl Ppu {
         self.pipeline.bgw_data[0] = tile_index.wrapping_add(offset);
     }
 
+    /// Retrieve window tile index for the current X
     fn select_win_tiles(&mut self) {
         if self.reg_wx < (FRAME_WIDTH as u8 + 7) && self.reg_wy < (FRAME_HEIGHT as u8) {
             if self.pipeline.win_y_triggered && (self.pipeline.fetch_x + 7) >= self.reg_wx {
@@ -405,18 +430,21 @@ impl Ppu {
         }
     }
 
+    /// Retrieve the current background/window tile data
     fn load_bgwin_data(&mut self, offset: u16) {
         let tile_index = self.pipeline.bgw_data[0];
         let addr = self.bgwin_data_area() + tile_index as u16 * 16 + self.pipeline.tile_y as u16 * 2 + offset;
         self.pipeline.bgw_data[1 + offset as usize] = self.read(addr);
     }
 
+    /// Scan for max 10 sprites in the current scan line
     fn scan_sprites(&mut self) {
         let rel_y = self.reg_ly + 16;
         let obj_size = self.obj_size();
 
         self.pipeline.init_sprites();
 
+        // Check for each sprite matching the current line in the oam (limit to 10)
         for i in (0..OAM_REGION_SIZE).step_by(4) {
             let y = self.oam[i];
             let x = self.oam[i + 1];
@@ -434,6 +462,7 @@ impl Ppu {
         self.pipeline.sort_sprites();
     }
 
+    /// Retrieve sprite tile index(es) for the current X
     fn select_sprites(&mut self) {
         let offset = self.reg_scx % 8;
         self.pipeline.obj_fetched_count = 0;
@@ -446,6 +475,8 @@ impl Ppu {
                 || ((rel_x + 8) >= self.pipeline.fetch_x && (rel_x + 8) < (self.pipeline.fetch_x + 8)) {
                     self.pipeline.obj_fetched_idx[self.pipeline.obj_fetched_count as usize] = i as u8;
                     self.pipeline.obj_fetched_count += 1;
+                    // There cannot be more than 3 sprites to appear within 8 pixels
+                    // left + middle + right
                     if self.pipeline.obj_fetched_count >= 3 {
                         break;
                     }
@@ -453,6 +484,7 @@ impl Ppu {
         }
     }
 
+    /// Retrieve sprite tile data
     fn load_sprite_data(&mut self, offset: u16) {
         let obj_size = self.obj_size();
 
@@ -473,7 +505,9 @@ impl Ppu {
         }
     }
 
+    /// Push pixel in the bgw_fifo
     fn push_pixels(&mut self) {
+        // get color id from low and high bytes at the bit position
         macro_rules! color_id {
             ($low: expr, $high: expr, $bit: expr) => {
                 (($low >> $bit) & 0x01) | ((($high >> $bit) & 0x01) << 1)
@@ -499,6 +533,7 @@ impl Ppu {
                     let obj = self.pipeline.obj_list[self.pipeline.obj_fetched_idx[j] as usize];
                     let rel_x = (obj.x - 8) + (self.reg_scy % 8);
 
+                    // Too far
                     if (rel_x + 8) < self.pipeline.fetch_x {
                         continue;
                     }
@@ -527,6 +562,7 @@ impl Ppu {
 
     }
 
+    /// Handle pixel row and display pixels if any
     fn render<S: Screen>(&mut self, screen: &mut S) {
         self.fetch_pixel_row();
 
@@ -537,6 +573,7 @@ impl Ppu {
         }
     }
 
+    /// Manage the pixel fetcher state machine
     fn fetch_pixel_row(&mut self) {
         self.pipeline.ticks += 1;
 

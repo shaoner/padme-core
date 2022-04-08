@@ -1,6 +1,7 @@
 use crate::collections::Queue;
 use super::{Pixel, Sprite};
 
+/// 5 steps of the fetching
 pub enum FetchState {
     Tile,
     TileDataLow,
@@ -70,16 +71,19 @@ impl Pipeline {
         self.fetch_x = 0;
     }
 
+    /// Init sprites storage
     pub fn init_sprites(&mut self) {
         self.obj_count = 0;
         self.obj_fetched_count = 0;
     }
 
+    /// Add sprites in the 10 potentials
     pub fn push_sprite(&mut self, obj: Sprite) {
         self.obj_list[self.obj_count as usize] = obj;
         self.obj_count += 1;
     }
 
+    /// Sort sprites by X
     pub fn sort_sprites(&mut self) {
         self.obj_list[..self.obj_count as usize].sort_unstable();
     }
