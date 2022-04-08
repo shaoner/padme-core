@@ -52,6 +52,7 @@ impl Timer {
         }
     }
 
+    /// Determine how many ticks to wait
     fn period_from_tac(tac: u8) -> u16 {
         match tac & FLAG_INPUT_CLOCK_SEL {
             INPUT_CLOCK_SEL_1024 => 1024,
@@ -62,6 +63,7 @@ impl Timer {
         }
     }
 
+    /// Single timer step for each cpu T-cycle
     pub fn step(&mut self, ir: &mut InterruptHandler) {
         self.div_cycles += 1;
 
@@ -73,12 +75,14 @@ impl Timer {
         let new_tima_period = Timer::period_from_tac(self.reg_tac);
 
         if new_tima_period != self.tima_period {
+            // period changed
             self.tima_period = new_tima_period;
             self.tima_cycles = 0;
         } else if (self.reg_tac & FLAG_TIMER_ENABLED) == FLAG_TIMER_ENABLED {
             self.tima_cycles += 1;
 
             if self.tima_cycles >= self.tima_period {
+                // Reached cycles limit, increment tima
                 self.reg_tima = self.reg_tima.wrapping_add(1);
                 self.tima_cycles = 0;
                 if self.reg_tima == 0xFF {
