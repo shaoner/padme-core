@@ -20,8 +20,11 @@ pub enum Button {
 }
 
 pub struct Joypad {
+    /// Joypad register @ 0xFF00, only for bit 4 and 5
     reg_p1: u8,
+    /// Keep register state in button mode
     button_state: u8,
+    /// Keep register state in direction mode
     dir_state: u8,
 }
 
@@ -49,11 +52,13 @@ impl Joypad {
                 self.dir_state &= !button;
             }
         }
+        // Not clear what to do if both are enabled or disabled so do nothing
     }
 }
 
 impl MemoryRegion for Joypad {
     fn read(&self, _address: u16) -> u8 {
+        // retrieve state depending on the current mode
         let select = self.reg_p1 & 0x30;
         match select {
             0x10 => select | !self.dir_state,
@@ -63,6 +68,8 @@ impl MemoryRegion for Joypad {
     }
 
     fn write(&mut self, _address: u16, value: u8) {
+        // 0 means enabled, so we only care about storing ~bit4 and ~bit5
+        // so during read, we can just apply a mask to bit4 and bit5
         self.reg_p1 = !value;
     }
 }
