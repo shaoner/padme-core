@@ -317,10 +317,10 @@ impl Ppu {
             self.set_mode(LCD_STATUS_MODE_XFER);
 
             let y = self.reg_ly.wrapping_add(self.reg_scy);
-            let map_addr = (y / 8) as u16 * 32;
+            let addr_y_offset = (y / 8) as u16 * 32;
             let tile_y = y % 8;
 
-            self.pipeline.init(map_addr, tile_y);
+            self.pipeline.init_fetcher(addr_y_offset, tile_y);
         }
     }
 
@@ -330,7 +330,7 @@ impl Ppu {
             self.render(screen);
         } else {
             if self.hdots >= XFER_LIMIT_PERIOD {
-                self.pipeline.fifo.clear();
+                self.pipeline.bgw_fifo.clear();
                 self.set_mode(LCD_STATUS_MODE_HBLANK);
                 if is_set!(self.reg_stat, FLAG_STAT_IT_HBLANK) {
                     it.request(InterruptFlag::Lcdc);
@@ -380,13 +380,13 @@ impl Ppu {
 
     fn select_bg_tiles(&mut self) {
         let x = self.pipeline.fetch_x.wrapping_add(self.reg_scx) as u16 / 8;
-        let tile_index = self.read(self.bg_map_area() + self.pipeline.map_addr + x);
+        let tile_index = self.read(self.bg_map_area() + self.pipeline.addr_y_offset + x);
         let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
             128u8
         } else {
             0u8
         };
-        self.pipeline.data[0] = tile_index.wrapping_add(offset);
+        self.pipeline.bgw_data[0] = tile_index.wrapping_add(offset);
     }
 
     fn select_win_tiles(&mut self) {
@@ -400,15 +400,15 @@ impl Ppu {
                 } else {
                     0u8
                 };
-                self.pipeline.data[0] = tile_index.wrapping_add(offset);
+                self.pipeline.bgw_data[0] = tile_index.wrapping_add(offset);
             }
         }
     }
 
     fn load_bgwin_data(&mut self, offset: u16) {
-        let tile_index = self.pipeline.data[0];
+        let tile_index = self.pipeline.bgw_data[0];
         let addr = self.bgwin_data_area() + tile_index as u16 * 16 + self.pipeline.tile_y as u16 * 2 + offset;
-        self.pipeline.data[1 + offset as usize] = self.read(addr);
+        self.pipeline.bgw_data[1 + offset as usize] = self.read(addr);
     }
 
     fn scan_sprites(&mut self) {
@@ -480,8 +480,8 @@ impl Ppu {
             }
         }
 
-        let bg_low = self.pipeline.data[1];
-        let bg_high = self.pipeline.data[2];
+        let bg_low = self.pipeline.bgw_data[1];
+        let bg_high = self.pipeline.bgw_data[2];
 
         for i in (0..=7u8).rev() {
             let mut bg_color_id = 0;
@@ -521,7 +521,7 @@ impl Ppu {
                     }
                 }
             }
-            self.pipeline.fifo.push(pixel);
+            self.pipeline.bgw_fifo.push(pixel);
             self.pipeline.fetch_x += 1;
         }
 
@@ -530,8 +530,8 @@ impl Ppu {
     fn render<S: Screen>(&mut self, screen: &mut S) {
         self.fetch_pixel_row();
 
-        if self.pipeline.fifo.size() > 0 {
-            let px = self.pipeline.fifo.pop();
+        if self.pipeline.bgw_fifo.size() > 0 {
+            let px = self.pipeline.bgw_fifo.pop();
             screen.set_pixel(&px, self.pipeline.render_x, self.reg_ly);
             self.pipeline.render_x += 1;
         }
@@ -576,7 +576,7 @@ impl Ppu {
                 self.pipeline.state = FetchState::Push;
             },
             FetchState::Push => {
-                if self.pipeline.fifo.is_empty() {
+                if self.pipeline.bgw_fifo.is_empty() {
                     self.push_pixels();
                     self.pipeline.state = FetchState::Tile;
                 }
