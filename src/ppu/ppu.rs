@@ -78,7 +78,8 @@ const VBLANK_LIMIT_PERIOD: u32          = FRAME_LIMIT_PERIOD + HBLANK_LIMIT_PERI
 //
 // Default pixels
 //
-const PIXEL_COLOR_WHITE: Pixel          = Pixel { r: 0xFF, g: 0xFF, b: 0xFF, a: 0xFF };
+// This white is slightly less white than pixel used during disabled screen
+const PIXEL_COLOR_WHITE: Pixel          = Pixel { r: 0xFE, g: 0xFE, b: 0xFE, a: 0xFE };
 const PIXEL_COLOR_LIGHTGRAY: Pixel      = Pixel { r: 0xC0, g: 0xC0, b: 0xC0, a: 0xFF };
 const PIXEL_COLOR_DARKGRAY: Pixel       = Pixel { r: 0x60, g: 0x60, b: 0x60, a: 0xFF };
 const PIXEL_COLOR_BLACK: Pixel          = Pixel { r: 0x00, g: 0x00, b: 0x00, a: 0xFF };
@@ -308,7 +309,7 @@ impl Ppu {
             LCD_STATUS_MODE_OAM => self.handle_mode_oam(),
             LCD_STATUS_MODE_XFER => self.handle_mode_xfer(screen, it),
             LCD_STATUS_MODE_HBLANK => self.handle_mode_hblank(it),
-            LCD_STATUS_MODE_VBLANK => self.handle_mode_vblank(it),
+            LCD_STATUS_MODE_VBLANK => self.handle_mode_vblank(screen, it),
             _ => unreachable!(),
         }
     }
@@ -381,8 +382,16 @@ impl Ppu {
     }
 
     /// Mode 1: Handle VBlank
-    fn handle_mode_vblank(&mut self, it: &mut InterruptHandler) {
-        trace!("pixel mode: vblank");
+    fn handle_mode_vblank<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
+        trace!("pixel mode: vblank {} {}", self.is_lcd_enabled(), self.pipeline.disabled);
+        if !self.pipeline.disabled && !self.is_lcd_enabled() {
+            // disable ppu + next frame is white
+            self.disable(screen);
+        } else if self.pipeline.disabled && self.is_lcd_enabled() {
+            // if ppu is enabled, the drawing starts immediately but the frame remains white
+            // instead we can just not re-enable the pipeline in the VBlank mode
+            self.pipeline.disabled = false;
+        }
         if self.hdots >= HBLANK_LIMIT_PERIOD {
             // End of line is reached
             self.inc_ly(it);
@@ -398,6 +407,17 @@ impl Ppu {
                 }
             }
             self.hdots = 0;
+        }
+    }
+
+    /// Disable PPU & sets default LCD screen color
+    fn disable<S: Screen>(&mut self, screen: &mut S) {
+        self.pipeline.disabled = true;
+        let px = Pixel { r: 0xFF, g: 0xFF, b: 0xFF, a: 0xFF };
+        for y in 0..FRAME_HEIGHT {
+            for x in 0..FRAME_WIDTH {
+                screen.set_pixel(&px, x as u8, y as u8);
+            }
         }
     }
 
@@ -564,11 +584,15 @@ impl Ppu {
 
     /// Handle pixel row and display pixels if any
     fn render<S: Screen>(&mut self, screen: &mut S) {
-        self.fetch_pixel_row();
+        if !self.pipeline.disabled {
+            self.fetch_pixel_row();
 
-        if self.pipeline.bgw_fifo.size() > 0 {
-            let px = self.pipeline.bgw_fifo.pop();
-            screen.set_pixel(&px, self.pipeline.render_x, self.reg_ly);
+            if self.pipeline.bgw_fifo.size() > 0 {
+                let px = self.pipeline.bgw_fifo.pop();
+                screen.set_pixel(&px, self.pipeline.render_x, self.reg_ly);
+                self.pipeline.render_x += 1;
+            }
+        } else {
             self.pipeline.render_x += 1;
         }
     }

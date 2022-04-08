@@ -11,6 +11,8 @@ pub enum FetchState {
 }
 
 pub struct Pipeline {
+    /// Whether the ppu processing is disabled
+    pub disabled: bool,
     /// To process 1 / 2 times
     pub ticks: u8,
     /// BG/Win Pixel fifo
@@ -43,6 +45,7 @@ pub struct Pipeline {
 impl Pipeline {
     pub fn new() -> Self {
         Self {
+            disabled: false,
             ticks: 0,
             bgw_fifo: Queue::new([Pixel::default(); 16]),
             obj_list: [Sprite::default(); 10],
