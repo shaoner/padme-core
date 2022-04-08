@@ -207,7 +207,11 @@ pub enum Licensee {
 }
 
 pub struct Rom<T: Deref<Target=[u8]>> {
+    /// Cartridge data, this is provided by the user depending on their platform
+    /// This can be a Vec<u8>, a static array,
+    /// Or generally any kind of structure that can be dereferenced to a u8
     storage: T,
+    /// External ram
     eram: [u8; ERAM_REGION_SIZE],
 }
 
