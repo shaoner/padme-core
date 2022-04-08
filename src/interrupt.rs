@@ -17,9 +17,9 @@ pub enum InterruptFlag {
 }
 
 pub struct InterruptHandler {
-    // Interrupt flag
+    /// Interrupt flag
     reg_if: u8,
-    // Interrupt enable
+    /// Interrupt enable
     reg_ie: u8,
 }
 
