@@ -17,8 +17,7 @@ pub struct Bus<T: Deref<Target=[u8]>> {
     pub serial: Serial,
     pub it: InterruptHandler,
     pub timer: Timer,
-
-    rom: Rom<T>,
+    pub rom: Rom<T>,
     wram: WorkRam,
     hram: HighRam,
 }

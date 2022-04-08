@@ -54,6 +54,10 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
         ticks
     }
 
+    pub fn rom(&self) -> &Rom<T> {
+        &self.bus.rom
+    }
+
     pub fn screen(&mut self) -> &mut S {
         &mut self.screen
     }
