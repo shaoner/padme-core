@@ -12,13 +12,21 @@ use crate::serial::Serial;
 use crate::timer::Timer;
 
 pub struct Bus<T: Deref<Target=[u8]>> {
+    /// Access to io joypad ports
     pub joypad: Joypad,
+    /// Access to io PPU ports
     pub ppu: Ppu,
+    /// Access to io serial ports
     pub serial: Serial,
-    pub it: InterruptHandler,
+    /// Access to io timer ports
     pub timer: Timer,
+    /// Access to cartridge
     pub rom: Rom<T>,
+    /// Shareable it handler
+    pub it: InterruptHandler,
+    /// Working ram
     wram: WorkRam,
+    /// High ram
     hram: HighRam,
 }
 
@@ -50,6 +58,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
                 self.wram.read(address - ECHORAM_REGION_START + WRAM_REGION_START)
             },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.read(address),
+            // I/O Registers
             IO_JOYPAD_REGION => self.joypad.read(address),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.read(address),
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.read(address),
@@ -75,7 +84,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
                 self.wram.write(address - ECHORAM_REGION_START + WRAM_REGION_START, value)
             },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.write(address, value),
-            // IO registers
+            // I/O Registers
             IO_JOYPAD_REGION => self.joypad.write(address, value),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.write(address, value),
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.write(address, value),
