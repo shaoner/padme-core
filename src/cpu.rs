@@ -455,6 +455,7 @@ impl Cpu {
         }
     }
 
+    #[cfg(debug_assertions)]
     fn dump_instruction<T: Deref<Target=[u8]>>(&mut self, bus: &Bus<T>, op: u8) {
         macro_rules! trace_instruction {
             ($($arg:tt)*) => {
