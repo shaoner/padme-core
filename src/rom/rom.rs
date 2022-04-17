@@ -7,6 +7,7 @@ use core::str;
 
 use crate::region::*;
 use crate::Error;
+use super::*;
 
 const HEADER_TITLE_START: usize         = 0x0134;
 const HEADER_TITLE_END: usize           = 0x0143;
@@ -21,189 +22,29 @@ const HEADER_OLD_LICENSEE_CODE: usize   = 0x014B;
 const HEADER_VERSION: usize             = 0x014C;
 const HEADER_HEADER_CHECKSUM: usize     = 0x014D;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
-pub enum CgbMode {
-    None,
-    Both,
-    Cgb,
-}
+const DEFAULT_RAM_BANK: u8              = 0x01;
+const DEFAULT_ROM_BANK: u8              = 0x00;
 
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
-pub enum CartridgeType {
-    RomOnly,
+const RAM_ENABLE_START: u16             = 0x0000;
+const RAM_ENABLE_END: u16               = 0x1FFF;
+const ROM_BANK_SEL_START: u16           = 0x2000;
+const ROM_BANK_SEL_END: u16             = 0x3FFF;
+const RAM_BANK_SEL_START: u16           = 0x4000;
+const RAM_BANK_SEL_END: u16             = 0x5FFF;
+const BANK_MODE_START: u16              = 0x6000;
+const BANK_MODE_END: u16                = 0x7FFF;
+
+const ERAM_SIZE: usize                  = 32 * 1024;
+const ROM_REGION_BANK0_START: u16       = ROM_REGION_START;
+const ROM_REGION_BANK0_END: u16         = 0x3FFF;
+const ROM_REGION_BANKN_START: u16       = 0x4000;
+const ROM_REGION_BANKN_END: u16         = ROM_REGION_END;
+const ROM_BANK_SIZE: usize              = (ROM_REGION_BANKN_END - ROM_REGION_BANKN_START + 1) as usize;
+const RAM_BANK_SIZE: usize              = ERAM_REGION_SIZE;
+
+enum Mbc {
+    Mbc0,
     Mbc1,
-    Mbc1Ram,
-    Mbc1RamBattery,
-    Mbc2,
-    Mbc2Battery,
-    RomRam,
-    RomRamBattery,
-    Mmm01,
-    Mmm01Ram,
-    Mmm01RamBattery,
-    Mbc3TimerBattery,
-    Mbc3TimerRamBattery,
-    Mbc3,
-    Mbc3Ram,
-    Mbc3RamBattery,
-    Mbc5,
-    Mbc5Ram,
-    Mbc5RamBattery,
-    Mbc5Rumble,
-    Mbc5RumbleRam,
-    Mbc5RumbleRamBattery,
-    Mbc6,
-    Mbc7SensorRumbleRamBattery,
-    PocketCamera,
-    BandaiTama5,
-    HuC3,
-    HuC1RamBattery,
-    Unknown,
-}
-
-#[cfg_attr(debug_assertions, derive(Debug))]
-#[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
-pub enum Licensee {
-    None,
-    Capcom,
-    ElectronicArts,
-    HudsonSoft,
-    BAi,
-    Kss,
-    Pow,
-    PcmComplete,
-    SanX,
-    KemcoJapan,
-    Seta,
-    Viacom,
-    Nintendo,
-    Bandai,
-    OceanAcclaim,
-    Konami,
-    Hector,
-    Taito,
-    Hudson,
-    Banpresto,
-    Ubisoft,
-    Atlus,
-    Malibu,
-    Angel,
-    BulletProof,
-    Irem,
-    Absolute,
-    Acclaim,
-    Activision,
-    AmericanSammy,
-    HitechEntertainment,
-    Ljn,
-    Matchbox,
-    Mattel,
-    MiltonBradley,
-    Titus,
-    Virgin,
-    LucasArts,
-    Ocean,
-    Infogrames,
-    Interplay,
-    Broderbund,
-    Sculptured,
-    Sci,
-    Thq,
-    Accolade,
-    Misawa,
-    Lozc,
-    TokumaShotenIntermedia,
-    TsukudaOriginal,
-    Chunsoft,
-    VideoSystem,
-    Varie,
-    YonezawaSpal,
-    Kaneko,
-    PackInSoft,
-    EliteSystems,
-    ItcEntertainment,
-    Yanoman,
-    Clary,
-    KotobukiSystems,
-    EntertainmentI,
-    Gremlin,
-    SpectrumHoloby,
-    UsGold,
-    Gametek,
-    ParkPlace,
-    Mindscape,
-    Tradewest,
-    ElectroBrain,
-    SculpteredSoft,
-    TheSalesCurve,
-    TriffixEntertainment,
-    Microprose,
-    Kemco,
-    TokumaShoten,
-    VicTokai,
-    Ape,
-    Imax,
-    ChunSoft,
-    Tsuburava,
-    Arc,
-    NihonBussan,
-    Tecmo,
-    Imagineer,
-    Nova,
-    HoriElectric,
-    Kawada,
-    Takara,
-    TechnosJapan,
-    ToeiAnimation,
-    Toho,
-    Namco,
-    Nexoft,
-    Enix,
-    Hal,
-    Snk,
-    PonyCanyon,
-    CultureBrain,
-    Sunsoft,
-    Sony,
-    Sammy,
-    SquareSoft,
-    DataEast,
-    TonkinHouse,
-    Koei,
-    Ufl,
-    Ultra,
-    Vap,
-    Use,
-    Meldac,
-    Sofel,
-    Quest,
-    Sigma,
-    AskKodansha,
-    NaxatSoft,
-    CopyaSystems,
-    Tomy,
-    Ncs,
-    Human,
-    Altron,
-    Jaleco,
-    Towachiki,
-    Uutaka,
-    Epoch,
-    Athena,
-    Asmik,
-    Natsume,
-    KingRecords,
-    EpicSonyRecords,
-    Igs,
-    AWave,
-    ExtremeEntertainment,
-    Romstar,
-    Unknown,
 }
 
 pub struct Rom<T: Deref<Target=[u8]>> {
@@ -212,7 +53,17 @@ pub struct Rom<T: Deref<Target=[u8]>> {
     /// Or generally any kind of structure that can be dereferenced to a u8
     storage: T,
     /// External ram
-    eram: [u8; ERAM_REGION_SIZE],
+    eram: [u8; ERAM_SIZE],
+    /// Is ram enabled (mbc1)
+    ram_enabled: bool,
+    /// Select the rom bank
+    rom_bank: u8,
+    /// Select the ram bank
+    ram_bank: u8,
+    /// Whether bank mode is rom or ram
+    ram_bank_mode: bool,
+    /// mbc mode
+    mbc: Mbc,
 }
 
 impl<T: Deref<Target=[u8]>> Rom<T> {
@@ -221,7 +72,25 @@ impl<T: Deref<Target=[u8]>> Rom<T> {
         if storage.len() < ROM_REGION_SIZE {
             Err(Error::InvalidRomSize(storage.len()))
         } else {
-            Ok(Self { storage, eram: [0u8; ERAM_REGION_SIZE] })
+            let mut rom = Self {
+                storage,
+                eram: [0u8; ERAM_SIZE],
+                ram_enabled: false,
+                ram_bank: DEFAULT_RAM_BANK,
+                rom_bank: DEFAULT_ROM_BANK,
+                ram_bank_mode: false,
+                mbc: Mbc::Mbc0,
+            };
+
+            rom.mbc = match rom.cartridge_type() {
+                CartridgeType::RomOnly => Mbc::Mbc0,
+                CartridgeType::Mbc1 |
+                CartridgeType::Mbc1Ram |
+                CartridgeType::Mbc1RamBattery => Mbc::Mbc1,
+                _ => unimplemented!(),
+            };
+
+            Ok(rom)
         }
     }
 
@@ -558,34 +427,92 @@ impl<T: Deref<Target=[u8]>> Rom<T> {
             _ => Licensee::Unknown,
         }
     }
-}
 
-impl<T: Deref<Target=[u8]>> MemoryRegion for Rom<T> {
-    fn read(&self, address: u16) -> u8 {
+    fn mbc0_read(&self, address: u16) -> u8 {
         match address {
             ROM_REGION_START..=ROM_REGION_END => {
-                let idx = (address - ROM_REGION_START) as usize;
-                if idx < self.storage.len() {
-                    self.storage[idx]
-                } else {
-                    0x00
-                }
+                // We know storage.len() >= ROM_REGION_END (32K)
+                self.storage[(address - ROM_REGION_START) as usize]
+            },
+            _ => {
+                error!("Cannot read ram");
+                0xFF
+            },
+        }
+    }
+
+    fn mbc0_write(&mut self, _address: u16, _value: u8) {
+        error!("Cannot write in rom");
+    }
+
+    fn mbc1_read(&self, address: u16) -> u8 {
+        match address {
+            ROM_REGION_BANK0_START..=ROM_REGION_BANK0_END => self.storage[address as usize],
+            ROM_REGION_BANKN_START..=ROM_REGION_BANKN_END => {
+                let offset = address - ROM_REGION_BANKN_START;
+                let idx = offset as usize + (ROM_BANK_SIZE * self.rom_bank as usize);
+                self.storage[idx]
             },
             ERAM_REGION_START..=ERAM_REGION_END => {
-                self.eram[(address - ERAM_REGION_START) as usize]
-            },
+                if self.ram_enabled {
+                    let offset = address - ERAM_REGION_START;
+                    let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
+                    self.eram[idx]
+                } else {
+                    0xFF
+                }
+            }
             _ => unreachable!(),
         }
     }
 
-    fn write(&mut self, address: u16, value: u8) {
+    fn mbc1_write(&mut self, address: u16, value: u8) {
         match address {
-            ERAM_REGION_START..=ERAM_REGION_END => {
-                self.eram[(address - ERAM_REGION_START) as usize] = value;
+            RAM_ENABLE_START..=RAM_ENABLE_END => self.ram_enabled = (value & 0xA) == 0xA,
+            ROM_BANK_SEL_START..=ROM_BANK_SEL_END => {
+                let bank = value & 0x1F;
+                self.set_rom_bank((self.rom_bank & 0xE0) | bank);
             },
-            _ => {
-                error!("cannot write in rom");
-            }
+            RAM_BANK_SEL_START..=RAM_BANK_SEL_END => {
+                let bank = value & 0x03;
+                if self.ram_bank_mode {
+                    self.ram_bank = bank;
+                } else {
+                    self.set_rom_bank(bank << 5 | self.rom_bank);
+                }
+            },
+            BANK_MODE_START..=BANK_MODE_END => self.ram_bank_mode = is_set!(value, 0x01),
+            ERAM_REGION_START..=ERAM_REGION_END => {
+                if self.ram_enabled {
+                    let offset = address - ERAM_REGION_START;
+                    let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
+                    self.eram[idx] = value;
+                }
+            },
+            _ => (),
+        }
+    }
+
+    fn set_rom_bank(&mut self, bank: u8) {
+        self.rom_bank = match bank {
+            0x00 | 0x20 | 0x40 | 0x60 => bank + 1,
+            _ => bank
+        }
+    }
+}
+
+impl<T: Deref<Target=[u8]>> MemoryRegion for Rom<T> {
+    fn read(&self, address: u16) -> u8 {
+        match self.mbc {
+            Mbc::Mbc0 => self.mbc0_read(address),
+            Mbc::Mbc1 => self.mbc1_read(address),
+        }
+    }
+
+    fn write(&mut self, address: u16, value: u8) {
+        match self.mbc {
+            Mbc::Mbc0 => self.mbc0_write(address, value),
+            Mbc::Mbc1 => self.mbc1_write(address, value),
         }
     }
 }
