@@ -319,6 +319,7 @@ impl Ppu {
         trace!("pixel mode: oam");
         if self.hdots == 1 {
             self.scan_sprites();
+            // check if this line is a window_y trigger
             if self.is_win_enabled() &&
                 self.reg_wx < (FRAME_WIDTH as u8) &&
                 self.reg_wy < (FRAME_HEIGHT as u8) &&
@@ -383,7 +384,7 @@ impl Ppu {
 
     /// Mode 1: Handle VBlank
     fn handle_mode_vblank<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
-        trace!("pixel mode: vblank {} {}", self.is_lcd_enabled(), self.pipeline.disabled);
+        trace!("pixel mode: vblank");
         if !self.pipeline.disabled && !self.is_lcd_enabled() {
             // disable ppu + next frame is white
             self.disable(screen);
@@ -484,15 +485,17 @@ impl Ppu {
 
     /// Retrieve sprite tile index(es) for the current X
     fn select_sprites(&mut self) {
-        let offset = self.reg_scx % 8;
+        let offset = (self.reg_scx % 8) as i16;
         self.pipeline.obj_fetched_count = 0;
 
         for i in 0..(self.pipeline.obj_count as usize) {
             let obj = &self.pipeline.obj_list[i];
-            let rel_x = obj.x.wrapping_sub(8).wrapping_add(offset);
+            let rel_x = (obj.x as i16).wrapping_sub(8).wrapping_add(offset);
+            let rel_x1 = rel_x.wrapping_add(8);
+            let fetch_x1 = (self.pipeline.fetch_x as i16).wrapping_add(8);
 
-            if (rel_x >= self.pipeline.fetch_x && rel_x < (self.pipeline.fetch_x + 8))
-                || ((rel_x + 8) >= self.pipeline.fetch_x && (rel_x + 8) < (self.pipeline.fetch_x + 8)) {
+            if (rel_x >= self.pipeline.fetch_x as i16 && rel_x < fetch_x1)
+                || (rel_x1 >= self.pipeline.fetch_x as i16 && rel_x1 < fetch_x1) {
                     self.pipeline.obj_fetched_idx[self.pipeline.obj_fetched_count as usize] = i as u8;
                     self.pipeline.obj_fetched_count += 1;
                     // There cannot be more than 3 sprites to appear within 8 pixels
@@ -551,10 +554,10 @@ impl Ppu {
             if self.is_obj_enabled() {
                 for j in 0..(self.pipeline.obj_fetched_count as usize) {
                     let obj = self.pipeline.obj_list[self.pipeline.obj_fetched_idx[j] as usize];
-                    let rel_x = (obj.x - 8) + (self.reg_scy % 8);
+                    let rel_x = (obj.x as i16).wrapping_sub(8).wrapping_add((self.reg_scx % 8) as i16);
 
                     // Too far
-                    if (rel_x + 8) < self.pipeline.fetch_x {
+                    if rel_x.wrapping_add(8) < self.pipeline.fetch_x as i16 {
                         continue;
                     }
                     let offset = self.pipeline.fetch_x as i16 - rel_x as i16;
