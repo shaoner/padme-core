@@ -1,6 +1,8 @@
 use core::ops::Deref;
 
-use log::{error, trace};
+use log::error;
+#[cfg(debug_assertions)]
+use log::trace;
 
 use crate::bus::Bus;
 use crate::interrupt::InterruptFlag;
