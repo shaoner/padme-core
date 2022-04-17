@@ -592,8 +592,11 @@ impl Ppu {
 
             if self.pipeline.bgw_fifo.size() > 0 {
                 let px = self.pipeline.bgw_fifo.pop();
-                screen.set_pixel(&px, self.pipeline.render_x, self.reg_ly);
-                self.pipeline.render_x += 1;
+                if self.pipeline.lx >= (self.reg_scx % 8) {
+                    screen.set_pixel(&px, self.pipeline.render_x, self.reg_ly);
+                    self.pipeline.render_x += 1;
+                }
+                self.pipeline.lx += 1;
             }
         } else {
             self.pipeline.render_x += 1;

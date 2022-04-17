@@ -28,8 +28,10 @@ pub struct Pipeline {
     pub fetch_x: u8,
     /// Current Y inside the tile
     pub tile_y: u8,
-    /// Current X to render
+    /// Current X rendered
     pub render_x: u8,
+    /// Current X to render within scx
+    pub lx: u8,
     /// Fetch data (tile index, tile data low, tile data high)
     pub bgw_data: [u8; 3],
     /// Sprite data (tile data low, tile data high)
@@ -59,6 +61,7 @@ impl Pipeline {
             obj_data: [0u8; 6],
             state: FetchState::Tile,
             render_x: 0,
+            lx: 0,
             win_y_triggered: false,
             win_ly: 0,
         }
@@ -72,6 +75,7 @@ impl Pipeline {
         self.bgw_fifo.clear();
         self.render_x = 0;
         self.fetch_x = 0;
+        self.lx = 0;
     }
 
     /// Init sprites storage
