@@ -1,5 +1,3 @@
-use log::error;
-
 #[cfg(debug_assertions)]
 use core::fmt;
 use core::ops::Deref;
@@ -7,7 +5,8 @@ use core::str;
 
 use crate::region::*;
 use crate::Error;
-use super::*;
+use super::{CgbMode, CartridgeType, Licensee};
+use super::mbc::*;
 
 const HEADER_TITLE_START: usize         = 0x0134;
 const HEADER_TITLE_END: usize           = 0x0143;
@@ -22,48 +21,13 @@ const HEADER_OLD_LICENSEE_CODE: usize   = 0x014B;
 const HEADER_VERSION: usize             = 0x014C;
 const HEADER_HEADER_CHECKSUM: usize     = 0x014D;
 
-const DEFAULT_RAM_BANK: u8              = 0x01;
-const DEFAULT_ROM_BANK: u8              = 0x00;
-
-const RAM_ENABLE_START: u16             = 0x0000;
-const RAM_ENABLE_END: u16               = 0x1FFF;
-const ROM_BANK_SEL_START: u16           = 0x2000;
-const ROM_BANK_SEL_END: u16             = 0x3FFF;
-const RAM_BANK_SEL_START: u16           = 0x4000;
-const RAM_BANK_SEL_END: u16             = 0x5FFF;
-const BANK_MODE_START: u16              = 0x6000;
-const BANK_MODE_END: u16                = 0x7FFF;
-
-const ERAM_SIZE: usize                  = 32 * 1024;
-const ROM_REGION_BANK0_START: u16       = ROM_REGION_START;
-const ROM_REGION_BANK0_END: u16         = 0x3FFF;
-const ROM_REGION_BANKN_START: u16       = 0x4000;
-const ROM_REGION_BANKN_END: u16         = ROM_REGION_END;
-const ROM_BANK_SIZE: usize              = (ROM_REGION_BANKN_END - ROM_REGION_BANKN_START + 1) as usize;
-const RAM_BANK_SIZE: usize              = ERAM_REGION_SIZE;
-
-enum Mbc {
-    Mbc0,
-    Mbc1,
-}
-
 pub struct Rom<T: Deref<Target=[u8]>> {
     /// Cartridge data, this is provided by the user depending on their platform
     /// This can be a Vec<u8>, a static array,
     /// Or generally any kind of structure that can be dereferenced to a u8
     storage: T,
-    /// External ram
-    eram: [u8; ERAM_SIZE],
-    /// Is ram enabled (mbc1)
-    ram_enabled: bool,
-    /// Select the rom bank
-    rom_bank: u8,
-    /// Select the ram bank
-    ram_bank: u8,
-    /// Whether bank mode is rom or ram
-    ram_bank_mode: bool,
-    /// mbc mode
-    mbc: Mbc,
+    /// Support for Mbc0, Mbc1, etc
+    mbc_ctrl: Mbc,
 }
 
 impl<T: Deref<Target=[u8]>> Rom<T> {
@@ -74,19 +38,17 @@ impl<T: Deref<Target=[u8]>> Rom<T> {
         } else {
             let mut rom = Self {
                 storage,
-                eram: [0u8; ERAM_SIZE],
-                ram_enabled: false,
-                ram_bank: DEFAULT_RAM_BANK,
-                rom_bank: DEFAULT_ROM_BANK,
-                ram_bank_mode: false,
-                mbc: Mbc::Mbc0,
+                mbc_ctrl: Mbc::from(Mbc0),
             };
-
-            rom.mbc = match rom.cartridge_type() {
-                CartridgeType::RomOnly => Mbc::Mbc0,
+            // MBC can be a dynamically dispatched on the stack
+            // which is awesome in a no_std / no alloc environment
+            // This still can be improved by extracting the Rom header
+            // which would allow setting the mbc controller before creating the rom instance
+            rom.mbc_ctrl = match rom.cartridge_type() {
+                CartridgeType::RomOnly => Mbc::from(Mbc0),
                 CartridgeType::Mbc1 |
                 CartridgeType::Mbc1Ram |
-                CartridgeType::Mbc1RamBattery => Mbc::Mbc1,
+                CartridgeType::Mbc1RamBattery => Mbc::from(Mbc1::new()),
                 _ => unimplemented!(),
             };
 
@@ -427,93 +389,15 @@ impl<T: Deref<Target=[u8]>> Rom<T> {
             _ => Licensee::Unknown,
         }
     }
-
-    fn mbc0_read(&self, address: u16) -> u8 {
-        match address {
-            ROM_REGION_START..=ROM_REGION_END => {
-                // We know storage.len() >= ROM_REGION_END (32K)
-                self.storage[(address - ROM_REGION_START) as usize]
-            },
-            _ => {
-                error!("Cannot read ram");
-                0xFF
-            },
-        }
-    }
-
-    fn mbc0_write(&mut self, _address: u16, _value: u8) {
-        error!("Cannot write in rom");
-    }
-
-    fn mbc1_read(&self, address: u16) -> u8 {
-        match address {
-            ROM_REGION_BANK0_START..=ROM_REGION_BANK0_END => self.storage[address as usize],
-            ROM_REGION_BANKN_START..=ROM_REGION_BANKN_END => {
-                let offset = address - ROM_REGION_BANKN_START;
-                let idx = offset as usize + (ROM_BANK_SIZE * self.rom_bank as usize);
-                self.storage[idx]
-            },
-            ERAM_REGION_START..=ERAM_REGION_END => {
-                if self.ram_enabled {
-                    let offset = address - ERAM_REGION_START;
-                    let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
-                    self.eram[idx]
-                } else {
-                    0xFF
-                }
-            }
-            _ => unreachable!(),
-        }
-    }
-
-    fn mbc1_write(&mut self, address: u16, value: u8) {
-        match address {
-            RAM_ENABLE_START..=RAM_ENABLE_END => self.ram_enabled = (value & 0xA) == 0xA,
-            ROM_BANK_SEL_START..=ROM_BANK_SEL_END => {
-                let bank = value & 0x1F;
-                self.set_rom_bank((self.rom_bank & 0xE0) | bank);
-            },
-            RAM_BANK_SEL_START..=RAM_BANK_SEL_END => {
-                let bank = value & 0x03;
-                if self.ram_bank_mode {
-                    self.ram_bank = bank;
-                } else {
-                    self.set_rom_bank(bank << 5 | self.rom_bank);
-                }
-            },
-            BANK_MODE_START..=BANK_MODE_END => self.ram_bank_mode = is_set!(value, 0x01),
-            ERAM_REGION_START..=ERAM_REGION_END => {
-                if self.ram_enabled {
-                    let offset = address - ERAM_REGION_START;
-                    let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
-                    self.eram[idx] = value;
-                }
-            },
-            _ => (),
-        }
-    }
-
-    fn set_rom_bank(&mut self, bank: u8) {
-        self.rom_bank = match bank {
-            0x00 | 0x20 | 0x40 | 0x60 => bank + 1,
-            _ => bank
-        }
-    }
 }
 
 impl<T: Deref<Target=[u8]>> MemoryRegion for Rom<T> {
     fn read(&self, address: u16) -> u8 {
-        match self.mbc {
-            Mbc::Mbc0 => self.mbc0_read(address),
-            Mbc::Mbc1 => self.mbc1_read(address),
-        }
+        self.mbc_ctrl.read(&self.storage, address)
     }
 
     fn write(&mut self, address: u16, value: u8) {
-        match self.mbc {
-            Mbc::Mbc0 => self.mbc0_write(address, value),
-            Mbc::Mbc1 => self.mbc1_write(address, value),
-        }
+        self.mbc_ctrl.write(address, value)
     }
 }
 
