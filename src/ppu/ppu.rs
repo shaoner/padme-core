@@ -174,6 +174,26 @@ impl Ppu {
         }
     }
 
+    /// Reset all registers and state
+    pub fn reset(&mut self) {
+        self.reg_lcdc = DEFAULT_REG_DMG_LCDC;
+        self.reg_stat = DEFAULT_REG_DMG_STAT;
+        self.reg_scy = DEFAULT_REG_DMG_SCY;
+        self.reg_scx = DEFAULT_REG_DMG_SCX;
+        self.reg_ly = DEFAULT_REG_DMG_LY;
+        self.reg_lyc = DEFAULT_REG_DMG_LYC;
+        self.reg_wy = DEFAULT_REG_DMG_WY;
+        self.reg_wx = DEFAULT_REG_DMG_WX;
+        self.reg_dma = DEFAULT_REG_DMG_DMA;
+        self.reg_bgp = DEFAULT_REG_DMG_BGP;
+        self.reg_obp0 = DEFAULT_REG_DMG_OBP0;
+        self.reg_obp1 = DEFAULT_REG_DMG_OBP1;
+        self.hdots = 0;
+        self.pipeline = Pipeline::new();
+        self.dma_active = false;
+        self.dma_idx = 0;
+    }
+
     /// Starts a DMA transfer
     pub fn dma_start(&mut self, source: u8) {
         self.reg_dma = source;

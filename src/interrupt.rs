@@ -31,6 +31,12 @@ impl InterruptHandler {
         }
     }
 
+    /// Reset all registers & state
+    pub fn reset(&mut self) {
+        self.reg_if = DEFAULT_REG_DMG_IF;
+        self.reg_ie = DEFAULT_REG_DMG_IE;
+    }
+
     pub fn request(&mut self, flag: InterruptFlag) {
         self.reg_if |= flag as u8;
     }

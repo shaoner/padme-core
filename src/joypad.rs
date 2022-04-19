@@ -37,6 +37,13 @@ impl Joypad {
         }
     }
 
+    /// Reset all registers and state
+    pub fn reset(&mut self) {
+        self.reg_p1 = DEFAULT_REG_DMG_P1;
+        self.button_state = 0;
+        self.dir_state = 0;
+    }
+
     pub fn set_button(&mut self, button: Button, is_pressed: bool) {
         let button = button as u8;
         if is_set!(button, FLAG_ACTION_BUTTON) {

@@ -29,6 +29,12 @@ impl Serial {
         }
     }
 
+    /// Reset all registers and states
+    pub fn reset(&mut self) {
+        self.reg_sb = DEFAULT_REG_SB;
+        self.reg_sc = DEFAULT_REG_SC;
+    }
+
     pub fn step<SO>(&mut self, out: &mut SO, it: &mut InterruptHandler)
         where SO: SerialOutput
     {

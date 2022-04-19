@@ -52,6 +52,17 @@ impl Timer {
         }
     }
 
+    /// Reset all registers and state
+    pub fn reset(&mut self) {
+        self.reg_div = DEFAULT_REG_DIV;
+        self.reg_tima = DEFAULT_REG_TIMA;
+        self.reg_tma = DEFAULT_REG_TMA;
+        self.reg_tac = DEFAULT_REG_TAC;
+        self.div_cycles = 0;
+        self.tima_cycles = 0;
+        self.tima_period = Timer::period_from_tac(DEFAULT_REG_TAC);
+    }
+
     /// Determine how many ticks to wait
     fn period_from_tac(tac: u8) -> u16 {
         match tac & FLAG_INPUT_CLOCK_SEL {

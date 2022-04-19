@@ -1823,6 +1823,24 @@ impl Cpu {
         }
     }
 
+    /// Reset all registers & state
+    pub fn reset(&mut self) {
+        self.a = DEFAULT_REG_A;
+        self.f = DEFAULT_REG_F;
+        self.b = DEFAULT_REG_B;
+        self.c = DEFAULT_REG_C;
+        self.d = DEFAULT_REG_D;
+        self.e = DEFAULT_REG_E;
+        self.h = DEFAULT_REG_H;
+        self.l = DEFAULT_REG_L;
+        self.sp = DEFAULT_SP;
+        self.pc = DEFAULT_PC;
+        self.halted = false;
+        self.stopped = false;
+        self.master_ie = true;
+        self.enabling_ie = false;
+    }
+
     /// Fetch, decode and execute next instruction
     /// Returns the number of ticks
     pub fn step<T: Deref<Target=[u8]>>(&mut self, bus: &mut Bus<T>) -> u8 {

@@ -34,16 +34,27 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.bus.ppu.reset();
+        self.bus.timer.reset();
+        self.bus.serial.reset();
+        self.bus.joypad.reset();
+        self.bus.it.reset();
+        self.cpu.reset();
+    }
+
     /// Replace cartridge with a new buffer
     pub fn load_bin(&mut self, bytes: T) -> Result<(), Error> {
         let rom = Rom::load(bytes)?;
 
+        self.reset();
         Ok(self.bus.set_rom(rom))
     }
 
     /// Reload a new rom
     pub fn load_rom(&mut self, rom: Rom<T>) {
         self.bus.set_rom(rom);
+        self.reset();
     }
 
     /// Single step to execute cpu, ppu, timer, serial & dma
