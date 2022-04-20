@@ -1,4 +1,5 @@
 use crate::region::*;
+use crate::interrupt::{InterruptFlag, InterruptHandler};
 
 // Default register values
 const DEFAULT_REG_DMG_P1: u8    = 0xCF;
@@ -44,17 +45,19 @@ impl Joypad {
         self.dir_state = 0;
     }
 
-    pub fn set_button(&mut self, button: Button, is_pressed: bool) {
+    pub fn set_button(&mut self, button: Button, is_pressed: bool, it: &mut InterruptHandler) {
         let button = button as u8;
         if is_set!(button, FLAG_ACTION_BUTTON) {
             if is_pressed {
                 self.button_state |= button;
+                it.request(InterruptFlag::Joypad);
             } else {
                 self.button_state &= !button;
             }
         } else if is_set!(button, FLAG_DIR_BUTTON) {
             if is_pressed {
                 self.dir_state |= button;
+                it.request(InterruptFlag::Joypad);
             } else {
                 self.dir_state &= !button;
             }

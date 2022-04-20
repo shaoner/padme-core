@@ -115,7 +115,7 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
     /// emu.set_button(Button::Up, true);
     /// ```
     pub fn set_button(&mut self, button: Button, is_pressed: bool) {
-        self.bus.joypad.set_button(button, is_pressed);
+        self.bus.joypad.set_button(button, is_pressed, &mut self.bus.it);
     }
 
     /// Sets the FPS (default = 60)
