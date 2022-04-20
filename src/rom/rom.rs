@@ -49,6 +49,11 @@ impl<T: Deref<Target=[u8]>> Rom<T> {
                 CartridgeType::Mbc1 |
                 CartridgeType::Mbc1Ram |
                 CartridgeType::Mbc1RamBattery => Mbc::from(Mbc1::new()),
+                CartridgeType::Mbc3 |
+                CartridgeType::Mbc3Ram |
+                CartridgeType::Mbc3RamBattery |
+                CartridgeType::Mbc3TimerBattery |
+                CartridgeType::Mbc3TimerRamBattery => Mbc::from(Mbc3::new()),
                 _ => unimplemented!(),
             };
 

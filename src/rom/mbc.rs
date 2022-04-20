@@ -19,10 +19,9 @@ const ROM_REGION_BANK0_START: u16       = ROM_REGION_START;
 const ROM_REGION_BANK0_END: u16         = 0x3FFF;
 const ROM_REGION_BANKN_START: u16       = 0x4000;
 const ROM_REGION_BANKN_END: u16         = ROM_REGION_END;
+
 const ROM_BANK_SIZE: usize              = (ROM_REGION_BANKN_END - ROM_REGION_BANKN_START + 1) as usize;
 const RAM_BANK_SIZE: usize              = ERAM_REGION_SIZE;
-
-pub struct Mbc0;
 
 #[enum_dispatch]
 pub trait MbcController {
@@ -34,7 +33,10 @@ pub trait MbcController {
 pub enum Mbc {
     Mbc0,
     Mbc1,
+    Mbc3,
 }
+
+pub struct Mbc0;
 
 impl MbcController for Mbc0 {
     fn read(&self, storage: &[u8], address: u16) -> u8 {
@@ -54,7 +56,6 @@ impl MbcController for Mbc0 {
         error!("Cannot write in rom");
     }
 }
-
 
 pub struct Mbc1 {
     /// External ram
@@ -131,6 +132,83 @@ impl MbcController for Mbc1 {
                     let offset = address - ERAM_REGION_START;
                     let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
                     self.eram[idx] = value;
+                }
+            },
+            _ => (),
+        }
+    }
+}
+
+pub struct Mbc3 {
+    ram_timer_enabled: bool,
+    rom_bank: u8,
+    ram_bank: u8,
+    reg_rtc: u8,
+    rtc_mode: bool,
+    eram: [u8; ERAM_SIZE],
+}
+
+impl Mbc3 {
+    pub fn new() -> Self {
+        Self {
+            ram_timer_enabled: false,
+            rom_bank: DEFAULT_ROM_BANK,
+            ram_bank: DEFAULT_RAM_BANK,
+            reg_rtc: 0,
+            rtc_mode: false,
+            eram: [0u8; ERAM_SIZE],
+        }
+    }
+}
+
+impl MbcController for Mbc3 {
+    fn read(&self, storage: &[u8], address: u16) -> u8 {
+        match address {
+            ROM_REGION_BANK0_START..=ROM_REGION_BANK0_END => storage[address as usize],
+            ROM_REGION_BANKN_START..=ROM_REGION_BANKN_END => {
+                let offset = address - ROM_REGION_BANKN_START;
+                let idx = offset as usize + (ROM_BANK_SIZE * self.rom_bank as usize);
+                storage[idx]
+            },
+            ERAM_REGION_START..=ERAM_REGION_END => {
+                if self.ram_timer_enabled {
+                    if self.rtc_mode {
+                        self.reg_rtc
+                    } else {
+                        let offset = address - ERAM_REGION_START;
+                        let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
+                        self.eram[idx]
+                    }
+                } else {
+                    0xFF
+                }
+            }
+            _ => 0xFF,
+        }
+    }
+
+    fn write(&mut self, address: u16, value: u8) {
+        match address {
+            RAM_ENABLE_START..=RAM_ENABLE_END => self.ram_timer_enabled = (value & 0xA) == 0xA,
+            ROM_BANK_SEL_START..=ROM_BANK_SEL_END => self.rom_bank = value,
+            RAM_BANK_SEL_START..=RAM_BANK_SEL_END => {
+                if value <= 0x03 {
+                    // Ram selection
+                    self.rtc_mode = false;
+                    self.ram_bank = value;
+                } else if value >= 0x08 && value <= 0x0C {
+                    self.rtc_mode = true;
+                }
+            },
+            ERAM_REGION_START..=ERAM_REGION_END => {
+                if self.ram_timer_enabled {
+                    if self.rtc_mode {
+                        self.reg_rtc = value;
+                    } else {
+                        let offset = address - ERAM_REGION_START;
+                        let idx = offset as usize + (RAM_BANK_SIZE * self.ram_bank as usize);
+                        self.eram[idx] = value;
+                    }
                 }
             },
             _ => (),
