@@ -48,7 +48,8 @@ impl<T: Deref<Target=[u8]>, S: Screen, SO: SerialOutput> System<T, S, SO> {
         let rom = Rom::load(bytes)?;
 
         self.reset();
-        Ok(self.bus.set_rom(rom))
+        self.bus.set_rom(rom);
+        Ok(())
     }
 
     /// Reload a new rom

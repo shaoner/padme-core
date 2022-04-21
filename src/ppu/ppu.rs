@@ -234,7 +234,7 @@ impl Ppu {
                 it.request(InterruptFlag::Lcdc);
             }
         } else {
-            self.reg_stat = reset!(self.reg_stat, FLAG_STAT_LYC);
+            self.reg_stat &= !FLAG_STAT_LYC;
         }
     }
 
@@ -257,7 +257,7 @@ impl Ppu {
     /// Sets pixel mode
     #[inline]
     fn set_mode(&mut self, mode: u8) {
-        self.reg_stat = reset!(self.reg_stat, FLAG_STAT_MODE) | mode;
+        self.reg_stat = (self.reg_stat & !FLAG_STAT_MODE) | mode;
     }
 
     /// Retrieve whether background/window is enabled
@@ -368,13 +368,11 @@ impl Ppu {
         trace!("pixel mode: xfer");
         if self.pipeline.render_x < FRAME_WIDTH as u8 {
             self.render(screen);
-        } else {
-            if self.hdots >= XFER_LIMIT_PERIOD {
-                self.pipeline.bgw_fifo.clear();
-                self.set_mode(LCD_STATUS_MODE_HBLANK);
-                if is_set!(self.reg_stat, FLAG_STAT_IT_HBLANK) {
-                    it.request(InterruptFlag::Lcdc);
-                }
+        } else if self.hdots >= XFER_LIMIT_PERIOD {
+            self.pipeline.bgw_fifo.clear();
+            self.set_mode(LCD_STATUS_MODE_HBLANK);
+            if is_set!(self.reg_stat, FLAG_STAT_IT_HBLANK) {
+                it.request(InterruptFlag::Lcdc);
             }
         }
     }
@@ -446,7 +444,7 @@ impl Ppu {
     fn select_bg_tiles(&mut self) {
         let x = self.pipeline.fetch_x.wrapping_add(self.reg_scx) as u16 / 8;
         let tile_index = self.read(self.bg_map_area() + self.pipeline.addr_y_offset + x);
-        let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
+        let offset = if is_not_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
             128u8
         } else {
             0u8
@@ -456,19 +454,20 @@ impl Ppu {
 
     /// Retrieve window tile index for the current X
     fn select_win_tiles(&mut self) {
-        if self.reg_wx < (FRAME_WIDTH as u8 + 7) && self.reg_wy < (FRAME_HEIGHT as u8) {
-            if self.pipeline.win_y_triggered && (self.pipeline.fetch_x + 7) >= self.reg_wx {
+        if self.reg_wx < (FRAME_WIDTH as u8 + 7)
+            && self.reg_wy < (FRAME_HEIGHT as u8)
+            && self.pipeline.win_y_triggered
+            && (self.pipeline.fetch_x + 7) >= self.reg_wx {
                 let tile_y = self.pipeline.win_ly as u16 / 8;
                 let addr = (self.pipeline.fetch_x as u16 + 7 - self.reg_wx as u16) / 8 + tile_y * 32;
                 let tile_index = self.read(self.win_map_area() + addr);
-                let offset = if !is_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
+                let offset = if is_not_set!(self.reg_lcdc, FLAG_LCDC_BGWIN_TDATA_AREA) {
                     128u8
                 } else {
                     0u8
                 };
                 self.pipeline.bgw_data[0] = tile_index.wrapping_add(offset);
             }
-        }
     }
 
     /// Retrieve the current background/window tile data
@@ -581,7 +580,7 @@ impl Ppu {
                         continue;
                     }
                     let offset = self.pipeline.fetch_x as i16 - rel_x as i16;
-                    if offset < 0 || offset > 7 {
+                    if !(0..=7).contains(&offset) {
                         continue;
                     }
                     let bit = if obj.is_x_flipped() { offset } else { 7 - offset };

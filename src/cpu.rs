@@ -1814,7 +1814,6 @@ impl Cpu {
             }
             // Unknown op code
             _ => {
-                debug_assert!(true);
                 error!("Unknown op code 0x{:02X}", op);
                 error!("{}", fmt_registers!(self.pc.wrapping_sub(1), self.sp,
                                             self.af(), self.bc(), self.de(), self.hl()));

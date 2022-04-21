@@ -196,7 +196,7 @@ impl MbcController for Mbc3 {
                     // Ram selection
                     self.rtc_mode = false;
                     self.ram_bank = value;
-                } else if value >= 0x08 && value <= 0x0C {
+                } else if (0x08..=0x0C).contains(&value) {
                     self.rtc_mode = true;
                 }
             },

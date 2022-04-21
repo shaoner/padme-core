@@ -10,8 +10,8 @@ macro_rules! is_set {
     }
 }
 
-macro_rules! reset {
+macro_rules! is_not_set {
     ($n: expr, $flag: expr) => {
-        ($n & !($flag as u8))
+        ($n & ($flag as u8)) != $flag
     }
 }
