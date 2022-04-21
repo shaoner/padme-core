@@ -1,0 +1,64 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  TOOLCHAIN_VERSION: nightly-2022-04-15
+
+jobs:
+  lint:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        id: toolchain
+        with:
+          path: |
+            ~/.cargo/bin/
+          key: ${{ runner.os }}-cargo-${{ env.TOOLCHAIN_VERSION }}
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1.0.6
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        with:
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
+          components: clippy
+          override: true
+      - name: Check style
+        run: cargo clippy -- -A clippy::module_inception
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        id: toolchain
+        with:
+          path: |
+            ~/.cargo/bin/
+          key: ${{ runner.os }}-cargo-${{ env.TOOLCHAIN_VERSION }}
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-deps-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1.0.6
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        with:
+          toolchain: ${{ env.TOOLCHAIN_VERSION }}
+          override: true
+      - name: Run unit tests
+        run: cargo test --all-targets
