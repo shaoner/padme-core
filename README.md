@@ -14,8 +14,8 @@ padme-core is a GB emulator core. It itself doesn't rely on libstd or on dynamic
 - [x] External Screen
 - [x] External Serial port
 - [x] Joypad
+- [x] Rom, MBC1, MBC3
+- [ ] MBC2, MBC4, MBC5, MBC6, MBC7
 - [ ] Add unit tests for each module
 - [ ] Add integration tests and quick examples
-- [ ] Joypad interrupts
-- [ ] MBC
-- [ ] Sound
+- [ ] Audio processor unit
