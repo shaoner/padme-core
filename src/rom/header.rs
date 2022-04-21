@@ -1,15 +1,13 @@
-#[cfg_attr(debug_assertions, derive(Debug))]
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CgbMode {
     None,
     Both,
     Cgb,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CartridgeType {
     RomOnly,
     Mbc1,
@@ -42,9 +40,8 @@ pub enum CartridgeType {
     Unknown,
 }
 
-#[cfg_attr(debug_assertions, derive(Debug))]
 #[repr(u8)]
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Licensee {
     None,
     Capcom,
