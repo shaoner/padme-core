@@ -192,6 +192,8 @@ impl Ppu {
         self.pipeline = Pipeline::new();
         self.dma_active = false;
         self.dma_idx = 0;
+        self.vram.iter_mut().for_each(| byte | *byte = 0);
+        self.oam.iter_mut().for_each(| byte | *byte = 0);
     }
 
     /// Starts a DMA transfer
