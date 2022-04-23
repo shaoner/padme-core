@@ -91,7 +91,7 @@ pub const IO_SERIAL_REGION_END: u16     = 0xFF02;
 pub const IO_TIMER_REGION_START: u16    = 0xFF04;
 pub const IO_TIMER_REGION_END: u16      = 0xFF07;
 pub const IO_SOUND_REGION_START: u16    = 0xFF10;
-pub const IO_SOUND_REGION_END: u16      = 0xFF26;
+pub const IO_SOUND_REGION_END: u16      = 0xFF3F;
 pub const IO_PPU_REGION_START: u16      = 0xFF40;
 pub const IO_PPU_REGION_END: u16        = 0xFF4B;
 // 0xFF7F ---
