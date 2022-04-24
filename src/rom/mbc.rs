@@ -2,8 +2,8 @@ use log::error;
 use enum_dispatch::enum_dispatch;
 use crate::region::*;
 
-const DEFAULT_RAM_BANK: u8              = 0x01;
-const DEFAULT_ROM_BANK: u8              = 0x00;
+const DEFAULT_RAM_BANK: u8              = 0x00;
+const DEFAULT_ROM_BANK: u8              = 0x01;
 
 const RAM_ENABLE_START: u16             = 0x0000;
 const RAM_ENABLE_END: u16               = 0x1FFF;
