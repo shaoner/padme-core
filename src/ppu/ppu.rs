@@ -84,6 +84,13 @@ const PIXEL_COLOR_LIGHTGRAY: Pixel      = Pixel { r: 0xC0, g: 0xC0, b: 0xC0, a: 
 const PIXEL_COLOR_DARKGRAY: Pixel       = Pixel { r: 0x60, g: 0x60, b: 0x60, a: 0xFF };
 const PIXEL_COLOR_BLACK: Pixel          = Pixel { r: 0x00, g: 0x00, b: 0x00, a: 0xFF };
 
+// Debug functions
+macro_rules! trace_mode {
+    ($mode: expr) => {
+        trace!("pixel mode: {}", $mode)
+    }
+}
+
 /// This represents a Screen surface
 /// # Example
 ///
@@ -338,7 +345,7 @@ impl Ppu {
 
     /// Mode 2: OAM scanning
     fn handle_mode_oam(&mut self) {
-        trace!("pixel mode: oam");
+        trace_mode!("oam");
         if self.hdots == 1 {
             self.scan_sprites();
             // check if this line is a window_y trigger
@@ -367,7 +374,7 @@ impl Ppu {
 
     /// Mode 3: Drawing pixels
     fn handle_mode_xfer<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
-        trace!("pixel mode: xfer");
+        trace!("xfer");
         if self.pipeline.render_x < FRAME_WIDTH as u8 {
             self.render(screen);
         } else if self.hdots >= XFER_LIMIT_PERIOD {
@@ -381,7 +388,7 @@ impl Ppu {
 
     /// Mode 0: Handle HBlank
     fn handle_mode_hblank(&mut self, it: &mut InterruptHandler) {
-        trace!("pixel mode: hblank");
+        trace!("hblank");
         if self.hdots >= HBLANK_LIMIT_PERIOD {
             self.inc_ly(it);
             // When the frame height is reached, switch to vblank mode
@@ -404,7 +411,7 @@ impl Ppu {
 
     /// Mode 1: Handle VBlank
     fn handle_mode_vblank<S: Screen>(&mut self, screen: &mut S, it: &mut InterruptHandler) {
-        trace!("pixel mode: vblank");
+        trace!("vblank");
         if !self.pipeline.disabled && !self.is_lcd_enabled() {
             // disable ppu + next frame is white
             self.disable(screen);
