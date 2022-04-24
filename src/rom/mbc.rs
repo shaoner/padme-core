@@ -1,5 +1,6 @@
-use log::error;
 use enum_dispatch::enum_dispatch;
+
+use crate::error::{io_error_read, io_error_write};
 use crate::region::*;
 
 const DEFAULT_RAM_BANK: u8              = 0x00;
@@ -46,14 +47,14 @@ impl MbcController for Mbc0 {
                 storage[(address - ROM_REGION_START) as usize]
             },
             _ => {
-                error!("Cannot read ram");
+                io_error_read(address);
                 0xFF
             }
         }
     }
 
-    fn write(&mut self, _address: u16, _value: u8) {
-        error!("Cannot write in rom");
+    fn write(&mut self, address: u16, _value: u8) {
+        io_error_write(address);
     }
 }
 
@@ -134,7 +135,7 @@ impl MbcController for Mbc1 {
                     self.eram[idx] = value;
                 }
             },
-            _ => (),
+            _ => io_error_write(address),
         }
     }
 }
@@ -183,7 +184,7 @@ impl MbcController for Mbc3 {
                     0xFF
                 }
             }
-            _ => 0xFF,
+            _ => unreachable!(),
         }
     }
 
@@ -211,7 +212,7 @@ impl MbcController for Mbc3 {
                     }
                 }
             },
-            _ => (),
+            _ => io_error_write(address),
         }
     }
 }

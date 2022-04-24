@@ -1,7 +1,6 @@
 use core::ops::Deref;
 
-use log::error;
-
+use crate::error::{io_error_read, io_error_write};
 use crate::interrupt::InterruptHandler;
 use crate::joypad::Joypad;
 use crate::ppu::Ppu;
@@ -67,7 +66,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address),
             REG_IF_ADDR | REG_IE_ADDR => self.it.read(address),
             _ => {
-                error!("Cannot read memory region {:04X}", address);
+                io_error_read(address);
                 0xFF
             },
         };
@@ -93,9 +92,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             IO_PPU_REGION_START..=IO_PPU_REGION_END => self.ppu.write(address, value),
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.write(address, value),
             REG_IF_ADDR | REG_IE_ADDR => self.it.write(address, value),
-            _ => {
-                error!("Cannot write region {:04X}", address);
-            }
+            _ => io_error_write(address),
         }
     }
 
