@@ -48,7 +48,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
     }
 
     pub fn read(&self, address: u16) -> u8 {
-        let value = match address {
+        match address {
             ROM_REGION_START..=ROM_REGION_END => self.rom.read(address),
             VRAM_REGION_START..=VRAM_REGION_END => self.ppu.read(address),
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.read(address),
@@ -69,9 +69,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
                 io_error_read(address);
                 0xFF
             },
-        };
-
-        value
+        }
     }
 
     pub fn write(&mut self, address: u16, value: u8) {
