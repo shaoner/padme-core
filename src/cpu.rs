@@ -1847,21 +1847,19 @@ impl Cpu {
     /// Fetch, decode and execute next instruction
     /// Returns the number of ticks
     pub fn step<T: Deref<Target=[u8]>>(&mut self, bus: &mut Bus<T>) -> u8 {
-        // If CPU is halted, we assume 4 cycles and return
-        let ticks;
-
-        if !self.halted {
+        let ticks = if !self.halted {
             // Fetch instruction
             let op = self.fetch(bus);
             // Decode & execute
-            ticks = self.decode_execute(bus, op);
+            self.decode_execute(bus, op)
         } else {
-            ticks = 4;
             let pending_it = bus.read(REG_IF_ADDR);
             if pending_it != 0 {
                 self.halted = false;
             }
-        }
+            // If CPU is halted, we assume 4 cycles and return
+            4
+        };
 
         // Check for interrupts
         if self.master_ie {
