@@ -1341,7 +1341,11 @@ impl Cpu {
             0x2B => { let rr = self.hl().wrapping_sub(1); self.set_hl(rr); 8 },
             0x3B => { self.sp = self.sp.wrapping_sub(1); 8 },
             // DI
-            0xF3 => { self.master_ie = false; 4 },
+            0xF3 => {
+                self.enabling_ie = false;
+                self.master_ie = false;
+                4
+            },
             // EI
             0xFB => { self.enabling_ie = true; 4 },
             // Rotates
