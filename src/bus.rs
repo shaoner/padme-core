@@ -4,7 +4,7 @@ use crate::error::{io_error_read, io_error_write};
 use crate::interrupt::InterruptHandler;
 use crate::joypad::Joypad;
 use crate::ppu::Ppu;
-use crate::ram::{HighRam, WorkRam};
+use crate::ram::Ram;
 use crate::region::*;
 use crate::rom::Rom;
 use crate::serial::Serial;
@@ -24,9 +24,9 @@ pub struct Bus<T: Deref<Target=[u8]>> {
     /// Shareable it handler
     pub it: InterruptHandler,
     /// Working ram
-    wram: WorkRam,
+    wram: Ram<WRAM_REGION_SIZE>,
     /// High ram
-    hram: HighRam,
+    hram: Ram<HRAM_REGION_SIZE>,
 }
 
 impl<T: Deref<Target=[u8]>> Bus<T> {
@@ -37,8 +37,8 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             serial: Serial::new(),
             timer: Timer::new(),
             rom,
-            hram: HighRam::new(),
-            wram: WorkRam::new(),
+            hram: Ram::new(),
+            wram: Ram::new(),
             it: InterruptHandler::new(),
         }
     }
@@ -52,9 +52,9 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             ROM_REGION_START..=ROM_REGION_END => self.rom.read(address),
             VRAM_REGION_START..=VRAM_REGION_END => self.ppu.read(address),
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.read(address),
-            WRAM_REGION_START..=WRAM_REGION_END => self.wram.read(address),
+            WRAM_REGION_START..=WRAM_REGION_END => self.wram.read(address - WRAM_REGION_START),
             ECHORAM_REGION_START..=ECHORAM_REGION_END => {
-                self.wram.read(address - ECHORAM_REGION_START + WRAM_REGION_START)
+                self.wram.read(address - ECHORAM_REGION_START)
             },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.read(address),
             // I/O Registers
@@ -63,7 +63,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.read(address),
             IO_SOUND_REGION_START..=IO_SOUND_REGION_END => 0xFF,
             IO_PPU_REGION_START..=IO_PPU_REGION_END => self.ppu.read(address),
-            HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address),
+            HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address - HRAM_REGION_START),
             REG_IF_ADDR | REG_IE_ADDR => self.it.read(address),
             _ => {
                 io_error_read(address);
@@ -77,9 +77,11 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             ROM_REGION_START..=ROM_REGION_END => self.rom.write(address, value),
             VRAM_REGION_START..=VRAM_REGION_END => self.ppu.write(address, value),
             ERAM_REGION_START..=ERAM_REGION_END => self.rom.write(address, value),
-            WRAM_REGION_START..=WRAM_REGION_END => self.wram.write(address, value),
+            WRAM_REGION_START..=WRAM_REGION_END => {
+                self.wram.write(address - WRAM_REGION_START, value)
+            },
             ECHORAM_REGION_START..=ECHORAM_REGION_END => {
-                self.wram.write(address - ECHORAM_REGION_START + WRAM_REGION_START, value)
+                self.wram.write(address - ECHORAM_REGION_START, value)
             },
             OAM_REGION_START..=OAM_REGION_END => self.ppu.write(address, value),
             // I/O Registers
@@ -88,7 +90,9 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.write(address, value),
             IO_SOUND_REGION_START..=IO_SOUND_REGION_END => (),
             IO_PPU_REGION_START..=IO_PPU_REGION_END => self.ppu.write(address, value),
-            HRAM_REGION_START..=HRAM_REGION_END => self.hram.write(address, value),
+            HRAM_REGION_START..=HRAM_REGION_END => {
+                self.hram.write(address - HRAM_REGION_START, value)
+            },
             REG_IF_ADDR | REG_IE_ADDR => self.it.write(address, value),
             _ => io_error_write(address),
         }
