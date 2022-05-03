@@ -37,7 +37,7 @@ checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
 
 [[package]]
 name = "padme-core"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "enum_dispatch",
  "log",
