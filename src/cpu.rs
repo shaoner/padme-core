@@ -1178,7 +1178,7 @@ impl Cpu {
             0x30 => { let n = self.fetch(bus); self.jump_if_rel(n, (self.f & FLAG_CARRY) == 0) },
             0x38 => { let n = self.fetch(bus); self.jump_if_rel(n, (self.f & FLAG_CARRY) == FLAG_CARRY) },
             // CALL nn
-            0xCD => { let nn = self.fetch16(bus); self.call(bus, nn); 12 },
+            0xCD => { let nn = self.fetch16(bus); self.call(bus, nn); 24 },
             // CALL cc, nn
             0xC4 => { let nn = self.fetch16(bus); self.call_if(bus, nn, (self.f & FLAG_ZERO) == 0) },
             0xCC => { let nn = self.fetch16(bus); self.call_if(bus, nn, (self.f & FLAG_ZERO) == FLAG_ZERO) },
