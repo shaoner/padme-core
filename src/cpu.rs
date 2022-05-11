@@ -1194,7 +1194,7 @@ impl Cpu {
             0xF7 => { self.call(bus, 0x30u16); 16 },
             0xFF => { self.call(bus, 0x38u16); 16 },
             // RET
-            0xC9 => { self.pc = self.pop(bus); 8 },
+            0xC9 => { self.pc = self.pop(bus); 16 },
             // RET cc
             0xC0 => { self.ret_if(bus, (self.f & FLAG_ZERO) == 0) },
             0xC8 => { self.ret_if(bus, (self.f & FLAG_ZERO) == FLAG_ZERO) },
