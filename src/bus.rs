@@ -1,5 +1,6 @@
 use core::ops::Deref;
 
+use crate::apu::Apu;
 use crate::error::{io_error_read, io_error_write};
 use crate::interrupt::InterruptHandler;
 use crate::joypad::Joypad;
@@ -11,6 +12,8 @@ use crate::serial::Serial;
 use crate::timer::Timer;
 
 pub struct Bus<T: Deref<Target=[u8]>> {
+    /// Access to io APU ports
+    pub apu: Apu,
     /// Access to io joypad ports
     pub joypad: Joypad,
     /// Access to io PPU ports
@@ -32,6 +35,7 @@ pub struct Bus<T: Deref<Target=[u8]>> {
 impl<T: Deref<Target=[u8]>> Bus<T> {
     pub fn new(rom: Rom<T>) -> Self {
         Self {
+            apu: Apu::new(),
             joypad: Joypad::new(),
             ppu: Ppu::new(),
             serial: Serial::new(),
@@ -61,7 +65,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             IO_JOYPAD_REGION => self.joypad.read(address),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.read(address),
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.read(address),
-            IO_SOUND_REGION_START..=IO_SOUND_REGION_END => 0xFF,
+            IO_SOUND_REGION_START..=IO_SOUND_REGION_END => self.apu.read(address),
             IO_PPU_REGION_START..=IO_PPU_REGION_END => self.ppu.read(address),
             HRAM_REGION_START..=HRAM_REGION_END => self.hram.read(address - HRAM_REGION_START),
             REG_IF_ADDR | REG_IE_ADDR => self.it.read(address),
@@ -88,7 +92,7 @@ impl<T: Deref<Target=[u8]>> Bus<T> {
             IO_JOYPAD_REGION => self.joypad.write(address, value),
             IO_SERIAL_REGION_START..=IO_SERIAL_REGION_END => self.serial.write(address, value),
             IO_TIMER_REGION_START..=IO_TIMER_REGION_END => self.timer.write(address, value),
-            IO_SOUND_REGION_START..=IO_SOUND_REGION_END => (),
+            IO_SOUND_REGION_START..=IO_SOUND_REGION_END => self.apu.write(address, value),
             IO_PPU_REGION_START..=IO_PPU_REGION_END => self.ppu.write(address, value),
             HRAM_REGION_START..=HRAM_REGION_END => {
                 self.hram.write(address - HRAM_REGION_START, value)
