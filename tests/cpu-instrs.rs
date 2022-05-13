@@ -1,7 +1,12 @@
 use std::fs;
 use padme_core::*;
 
+struct DummyPlayer;
 struct DummyLcd;
+
+impl AudioSpeaker for DummySpeaker {
+    fn set_samples(&mut self, _left: f32, _right: f32) { }
+}
 
 impl Screen for DummyLcd {
     fn set_pixel(&mut self, _px: &Pixel, _x: u8, _y: u8) { }
@@ -25,7 +30,7 @@ fn get_bin(name: &str) -> Vec<u8> {
 fn check_output(bin_name: &str, max_ticks: usize) -> bool {
     let bin = get_bin(bin_name);
     let rom = Rom::load(bin).unwrap();
-    let mut emu = System::new(rom, DummyLcd, SerialBuffer { data: "".to_owned() });
+    let mut emu = System::new(rom, DummyLcd, SerialBuffer { data: "".to_owned() }, DummySpeaker);
     let mut ticks: usize = 0;
 
     loop {
