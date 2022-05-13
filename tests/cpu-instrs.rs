@@ -30,7 +30,7 @@ fn check_output(bin_name: &str, max_ticks: usize) -> bool {
 
     loop {
         ticks += emu.step() as usize;
-        if ticks > max_ticks {
+        if ticks >= max_ticks {
             break;
         }
     }
@@ -41,65 +41,65 @@ fn check_output(bin_name: &str, max_ticks: usize) -> bool {
 #[test]
 #[ignore]
 fn cpu_instrs_special() {
-    assert!(check_output("01-special", 9605812));
+    assert!(check_output("01-special", 9747268));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_interrupts() {
-    assert!(check_output("02-interrupts", 1740740));
+    assert!(check_output("02-interrupts", 1741744));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_op_sp_hl() {
-    assert!(check_output("03-op sp,hl", 9535348));
+    assert!(check_output("03-op sp,hl", 9747028));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_op_r_imm() {
-    assert!(check_output("04-op r,imm", 11150484));
+    assert!(check_output("04-op r,imm", 11432356));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_op_rp() {
-    assert!(check_output("05-op rp", 15434872));
+    assert!(check_output("05-op rp", 15646524));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_ld_r_r() {
-    assert!(check_output("06-ld r,r", 2787804));
+    assert!(check_output("06-ld r,r", 2373928));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_jr_jp_call_ret_rst() {
-    assert!(check_output("07-jr,jp,call,ret,rst", 2864260));
+    assert!(check_output("07-jr,jp,call,ret,rst", 2935484));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_misc() {
-    assert!(check_output("08-misc instrs", 2162464));
+    assert!(check_output("08-misc instrs", 2233692));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_op_r_r() {
-    assert!(check_output("09-op r,r", 37625256));
+    assert!(check_output("09-op r,r", 38117856));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_bitops() {
-    assert!(check_output("10-bit ops", 57218104));
+    assert!(check_output("10-bit ops", 57921392));
 }
 
 #[test]
 #[ignore]
 fn cpu_instrs_op_a_hl() {
-    assert!(check_output("11-op a,(hl)", 67751412));
+    assert!(check_output("11-op a,(hl)", 73370352));
 }
