@@ -18,6 +18,53 @@ pub const REG_TMA_ADDR: u16             = 0xFF06;
 // Timer control
 pub const REG_TAC_ADDR: u16             = 0xFF07;
 
+// --- Sound ---
+// Channel 1: Sweep
+pub const REG_NR10_ADDR: u16            = 0xFF10;
+// Channel 1: Sound Length / Wave Pattern Duty
+pub const REG_NR11_ADDR: u16            = 0xFF11;
+// Channel 1: Volume Envelope
+pub const REG_NR12_ADDR: u16            = 0xFF12;
+// Channel 1: Frequency lo data
+pub const REG_NR13_ADDR: u16            = 0xFF13;
+// Channel 1: Restart / Frequency hi data
+pub const REG_NR14_ADDR: u16            = 0xFF14;
+// Channel 2: Sound Length / Wave Pattern Duty
+pub const REG_NR21_ADDR: u16            = 0xFF16;
+// Channel 2: Volume Envelope
+pub const REG_NR22_ADDR: u16            = 0xFF17;
+// Channel 2: Frequency lo data
+pub const REG_NR23_ADDR: u16            = 0xFF18;
+// Channel 2: Restart / Frequency hi data
+pub const REG_NR24_ADDR: u16            = 0xFF19;
+// Channel 3: Sound on / off
+pub const REG_NR30_ADDR: u16            = 0xFF1A;
+// Channel 3: Sound length
+pub const REG_NR31_ADDR: u16            = 0xFF1B;
+// Channel 3: Volume
+pub const REG_NR32_ADDR: u16            = 0xFF1C;
+// Channel 3: Frequency lo data
+pub const REG_NR33_ADDR: u16            = 0xFF1D;
+// Channel 3: Restart / Frequency high data
+pub const REG_NR34_ADDR: u16            = 0xFF1E;
+// Channel 3: Wave pattern ram = 32 x 4bit
+pub const WAVE_PATTERN_RAM_START: u16   = 0xFF30;
+pub const WAVE_PATTERN_RAM_END: u16     = 0xFF3F;
+// Channel 4: Sound Length
+pub const REG_NR41_ADDR: u16            = 0xFF20;
+// Channel 4: Volume Envelope
+pub const REG_NR42_ADDR: u16            = 0xFF21;
+// Channel 4: Polynomial counter
+pub const REG_NR43_ADDR: u16            = 0xFF22;
+// Channel 4: Restart / initial length
+pub const REG_NR44_ADDR: u16            = 0xFF23;
+// Sound controller: Channel control / ON-OFF / Volume
+pub const REG_NR50_ADDR: u16            = 0xFF24;
+// Sound controller: Selection of Sound output terminal
+pub const REG_NR51_ADDR: u16            = 0xFF25;
+// Sound controller: Channel on/off
+pub const REG_NR52_ADDR: u16            = 0xFF26;
+
 // --- PPU ---
 // LCD control
 pub const REG_LCDC_ADDR: u16            = 0xFF40;
