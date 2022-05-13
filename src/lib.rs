@@ -3,6 +3,8 @@
 // Private mods
 #[macro_use]
 mod bitops;
+
+mod apu;
 mod bus;
 mod collections;
 mod cpu;
@@ -18,6 +20,7 @@ mod system;
 mod timer;
 
 // Public exports
+pub use apu::{AUDIO_SAMPLE_RATE, AudioSpeaker};
 pub use cpu::CLOCK_SPEED;
 pub use error::Error;
 pub use joypad::Button;
