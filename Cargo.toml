@@ -2,6 +2,16 @@
 name = "padme-core"
 version = "0.0.0"
 edition = "2021"
+description = "Gameboy emulator engine"
+readme = "README.md"
+repository = "https://github.com/alexlren/padme-core"
+license-file = "LICENSE.txt"
+keywords = ["gameboy", "emulator", "no_std"]
+categories = ["emulators", "no-std"]
+authors = ["Alex Ren <alexlt@pm.me>"]
+
+[badges]
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_info"] }
