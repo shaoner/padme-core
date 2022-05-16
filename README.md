@@ -1,5 +1,9 @@
 # Padme core
 
+![crates.io](https://img.shields.io/crates/v/padme_core.svg)
+![build status](https://github.com/alexlren/estel_secp256k1/actions/workflows/ci.yaml/badge.svg)
+
+
 ## Pixel As Dot-Matrix Emulator
 
 padme-core is a Gameboy emulator engine. It itself doesn't rely on libstd or on dynamic memory, which makes it easier to use in any embedded platforms or [web assembly](https://github.com/alexlren/padme-browser).
