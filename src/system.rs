@@ -107,32 +107,11 @@ impl<T: Deref<Target=[u8]>,
     /// Forward a button press to the joypad controller
     /// ```
     /// # use padme_core::*;
-    /// # use std::thread::sleep;
-    /// # use std::time::Instant;
-    /// #
-    /// # struct MyAudioPlayer;
-    /// #
-    /// # impl AudioSpeaker for MyAudioPlayer {
-    /// #     fn set_samples(&mut self, _left: f32, _right: f32) { }
-    /// # }
-    /// #
-    /// # struct Lcd;
-    /// #
-    /// # impl Screen for Lcd {
-    /// #    fn set_pixel(&mut self, px: &Pixel, x: u8, y: u8) {}
-    /// #
-    /// #    fn update(&mut self) {}
-    /// # }
-    /// #
-    /// # struct Console;
-    /// #
-    /// # impl SerialOutput for Console {
-    /// #    fn putchar(&mut self, c: u8) {}
-    /// # }
+    /// # use padme_core::default::*;
     /// #
     /// # let mut bin = [0u8; 32 * 1024];
     /// # let mut rom = Rom::load(&mut bin[..]).unwrap();
-    /// let mut emu = System::new(rom, Lcd, Console, MyAudioPlayer);
+    /// let mut emu = System::new(rom, NoScreen, NoSerial, NoSpeaker);
     /// emu.set_button(Button::A, true);
     /// emu.set_button(Button::Up, true);
     /// ```
@@ -150,32 +129,13 @@ impl<T: Deref<Target=[u8]>,
     /// Execute enough steps to retrieve 1 frame
     /// ```
     /// # use padme_core::*;
-    /// # use std::thread::sleep;
+    /// # use padme_core::default::*;
     /// # use std::time::Instant;
-    /// #
-    /// # struct MyAudioPlayer;
-    /// #
-    /// # impl AudioSpeaker for MyAudioPlayer {
-    /// #     fn set_samples(&mut self, _left: f32, _right: f32) { }
-    /// # }
-    /// #
-    /// # struct Lcd;
-    /// #
-    /// # impl Screen for Lcd {
-    /// #    fn set_pixel(&mut self, px: &Pixel, x: u8, y: u8) {}
-    /// #
-    /// #    fn update(&mut self) {}
-    /// # }
-    /// #
-    /// # struct Console;
-    /// #
-    /// # impl SerialOutput for Console {
-    /// #    fn putchar(&mut self, c: u8) {}
-    /// # }
+    /// # use std::thread::sleep;
     /// #
     /// # let mut bin = [0u8; 32 * 1024];
     /// # let mut rom = Rom::load(&mut bin[..]).unwrap();
-    /// let mut emu = System::new(rom, Lcd, Console, MyAudioPlayer);
+    /// let mut emu = System::new(rom, NoScreen, NoSerial, NoSpeaker);
     /// // loop {
     ///     let t0 = Instant::now();
     ///     emu.update_frame();

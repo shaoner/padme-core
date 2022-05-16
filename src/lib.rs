@@ -28,3 +28,5 @@ pub use ppu::{FRAME_HEIGHT, FRAME_WIDTH, Pixel, Screen};
 pub use rom::{CartridgeType, CgbMode, Licensee, Rom};
 pub use serial::SerialOutput;
 pub use system::System;
+
+pub mod default;

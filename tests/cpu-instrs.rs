@@ -1,17 +1,6 @@
 use std::fs;
 use padme_core::*;
-
-struct DummyAudioPlayer;
-struct DummyLcd;
-
-impl AudioSpeaker for DummyAudioPlayer {
-    fn set_samples(&mut self, _left: f32, _right: f32) { }
-}
-
-impl Screen for DummyLcd {
-    fn set_pixel(&mut self, _px: &Pixel, _x: u8, _y: u8) { }
-    fn update(&mut self) { }
-}
+use padme_core::default::{NoScreen, NoSpeaker};
 
 struct SerialBuffer {
     pub data: String,
@@ -30,7 +19,7 @@ fn get_bin(name: &str) -> Vec<u8> {
 fn check_output(bin_name: &str, max_ticks: usize) -> bool {
     let bin = get_bin(bin_name);
     let rom = Rom::load(bin).unwrap();
-    let mut emu = System::new(rom, DummyLcd, SerialBuffer { data: "".to_owned() }, DummyAudioPlayer);
+    let mut emu = System::new(rom, NoScreen, SerialBuffer { data: "".to_owned() }, NoSpeaker);
     let mut ticks: usize = 0;
 
     loop {
